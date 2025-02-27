@@ -51,10 +51,13 @@ Apenas certifique-se de que o Python 3.6 ou superior está instalado:
 ```bash
    wget -O conversor_tts_lite.py https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/conversor_tts_lite.py 
 ```
-### 2. Acesse o local do script:
+### 2. Confirme se o script foi baixado com sucesso:
 ```bash
-   cd Conversor-TTS 
+   ls
 ```
+   #### ✅ Se aparecer a mensagem ### conversor_tts_lite.py #### o aquivo foi baixado!
+   #### ❌ Se o nome conversor_tts_lite.py não aparecer, refaça o passo 1!
+
 ### 3. Instale as dependências necessárias: 
 
 	pip install edge-tts langdetect unidecode num2words chardet 
