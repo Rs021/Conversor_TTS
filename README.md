@@ -45,7 +45,7 @@ Apenas certifique-se de que o Python 3.6 ou superior está instalado:
 
 ### 1.	Clone este repositório:
 
-	git clone https://github.com/JonJonesBR/Conversor-TTS.git cd conversor-tts 
+	git clone https://github.com/JonJonesBR/Conversor-TTS.git && cd Conversor-TTS 
 
 ### 2. Instale as dependências necessárias: 
 
