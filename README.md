@@ -38,9 +38,9 @@ Para utilizar este conversor de texto para fala no Android, você precisará ins
 ### 🔵 Linux
 
 Apenas certifique-se de que o Python 3.6 ou superior está instalado:
-
-sudo apt update && sudo apt install python3 python3-pip git -y
-
+```bash
+   sudo apt update && sudo apt install python3 python3-pip git -y
+```
 ## 🚀 Instalação do Conversor TTS
 
 ### 1.	Clone este repositório:
