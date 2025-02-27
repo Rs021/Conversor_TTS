@@ -60,47 +60,66 @@ Apenas certifique-se de que o Python 3.6 ou superior está instalado:
 ### 2.	No menu principal, você terá as seguintes opções:
 
    •	🚀 INICIAR: Começa o processo de conversão
-	•	🎙️ VOZES: Testa as vozes disponíveis
-	•	❓ AJUDA: Exibe o guia de uso
-	•	🚪 SAIR: Encerra o programa
+   
+   •	🎙️ VOZES: Testa as vozes disponíveis
+	
+   •	❓ AJUDA: Exibe o guia de uso
+	
+   •	🚪 SAIR: Encerra o programa
 
 ### 3.	Para converter um texto:
 
    •	Salve seu texto em um arquivo .txt
-	•	Coloque o arquivo na pasta Downloads
-	•	Escolha a opção INICIAR
-	•	Selecione o arquivo de texto
-	•	Escolha a voz desejada
-	•	Aguarde a conversão
+	
+   •	Coloque o arquivo na pasta Downloads
+	
+   •	Escolha a opção INICIAR
+	
+   •	Selecione o arquivo de texto
+	
+   •	Escolha a voz desejada
+	
+   •	Aguarde a conversão
 
 ## 🎙️ Vozes Disponíveis
 
    •	Thalita (padrão) - Otimizada para múltiplos idiomas
-	•	Francisca - Voz feminina alternativa
-	•	Antonio - Voz masculina
+	
+   •	Francisca - Voz feminina alternativa
+	
+   •	Antonio - Voz masculina
 
 ## 🛠️ Recursos Avançados
 
 ### 📜 Processamento Inteligente
 
    •	🔢 Números para texto (ex.: “1234” → “mil duzentos e trinta e quatro”)
-	•	🏆 Números ordinais (ex.: “1º” → “primeiro”)
-	•	🏛️ Números romanos (ex.: “Capítulo IV” → “Capítulo 4”)
-	•	📝 Abreviações expandidas (ex.: “Dr.” → “Doutor”, “Sr.” → “Senhor”)
-	•	🔣 Substituições especiais (ex.: “% → porcento”, “& → e”)
+	
+   •	🏆 Números ordinais (ex.: “1º” → “primeiro”)
+	
+   •	🏛️ Números romanos (ex.: “Capítulo IV” → “Capítulo 4”)
+	
+   •	📝 Abreviações expandidas (ex.: “Dr.” → “Doutor”, “Sr.” → “Senhor”)
+	
+   •	🔣 Substituições especiais (ex.: “% → porcento”, “& → e”)
 
 ## 🔄 Controle de Conversão
 
    •	⏸️ Pausar e retomar: Se interrompido, o progresso é salvo
-	•	📦 Escolha do formato de saída: Unificar áudio ou manter arquivos separados
-	•	🛑 Interrupção segura: Pressione Ctrl+C para interromper e decidir o que fazer com os arquivos gerados
+	
+   •	📦 Escolha do formato de saída: Unificar áudio ou manter arquivos separados
+	
+   •	🛑 Interrupção segura: Pressione Ctrl+C para interromper e decidir o que fazer com os arquivos gerados
 
 ## 🚀 Execução Otimizada
 
    •	📂 Leitura automática de arquivos com detecção de encoding
-	•	🔍 Aviso se o texto não estiver em português
-	•	🔊 Ajuste dinâmico de pausas para melhor entonação
-	•	🏗️ Estrutura modular para fácil personalização
+	
+   •	🔍 Aviso se o texto não estiver em português
+	
+   •	🔊 Ajuste dinâmico de pausas para melhor entonação
+	
+   •	🏗️ Estrutura modular para fácil personalização
 
 ## 🔗 Links Úteis
 
@@ -122,9 +141,12 @@ Apenas certifique-se de que o Python 3.6 ou superior está instalado:
 ## ⚠️ Observações
 
    •	O arquivo de áudio será salvo na pasta de Downloads
-	•	O nome do arquivo de áudio será baseado na primeira linha do texto
-	•	A conversão requer conexão com a internet
-	•	Para melhor compatibilidade no Termux, conceda permissões com:
+	
+   •	O nome do arquivo de áudio será baseado na primeira linha do texto
+	
+   •	A conversão requer conexão com a internet
+	
+   •	Para melhor compatibilidade no Termux, conceda permissões com:
 
 	termux-setup-storage  # Concede acesso ao armazenamento
 	
