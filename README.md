@@ -122,15 +122,15 @@ Apenas certifique-se de que o Python 3.6 ou superior está instalado:
    •	🏗️ Estrutura modular para fácil personalização
 
 ## 🔗 Links Úteis
-
+```bash
 	•	📥 Baixar Termux (F-Droid): Clique aqui
 	•	📥 Baixar Termux (GitHub): Clique aqui
 	•	📚 Guia oficial do Termux: Leia aqui
 	•	🎤 Baixar o repositório deste Conversor TTS: Clique aqui
-
+```
 ### •	🛠️ Comandos úteis do Termux:
 ```bash 
-	termux-setup-storage  # Concede acesso ao armazenamento
+termux-setup-storage  # Concede acesso ao armazenamento
 	
    apt update && apt upgrade -y  # Atualiza os pacotes do Termux 
 	
