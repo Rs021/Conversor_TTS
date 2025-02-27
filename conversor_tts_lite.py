@@ -463,26 +463,21 @@ async def processar_audio(texto: str, arquivo_saida: str, voz: str, chunk_size: 
     return False
 
 def ler_arquivo(caminho: str) -> str:
-    """
-    Lê o conteúdo de um arquivo tentando diversos encodings.
-    Se necessário, utiliza detecção automática via chardet.
-    """
-    for encoding in ENCODINGS_TENTATIVAS:
-        try:
-            with open(caminho, 'r', encoding=encoding) as f:
-                return f.read()
-        except (UnicodeDecodeError, FileNotFoundError):
-            continue
-
     try:
         with open(caminho, 'rb') as f:
-            resultado = chardet.detect(f.read())
-        encoding_detectado = resultado.get('encoding')
-        if encoding_detectado:
-            with open(caminho, 'r', encoding=encoding_detectado) as f:
-                return f.read()
+            conteudo_bruto = f.read()
+            resultado = chardet.detect(conteudo_bruto)
+            encoding_detectado = resultado.get('encoding')
+
+            if encoding_detectado is None and b'\x00' in conteudo_bruto:
+                # Força UTF-16 LE se encontrar alta presença de bytes nulos (característica de UTF-16)
+                encoding_detectado = 'utf-16-le'
+
+            if encoding_detectado:
+                return conteudo_bruto.decode(encoding_detectado)
+
     except Exception as e:
-        print(f"⚠️ Erro ao detectar encoding automaticamente: {e}")
+        print(f"❌ Erro ao ler o arquivo: {e}")
 
     print(f"❌ Não foi possível ler o arquivo {caminho}. Verifique o encoding.")
     return None
