@@ -13,7 +13,7 @@ Um conversor de texto para áudio em português brasileiro, utilizando a tecnolo
 - 🛠️ **Processamento otimizado para melhor entonação e pausas**
 - ⏸️ **Pausa e retomada da conversão em caso de interrupção**
 - 📦 **Opção de unificar ou manter arquivos de áudio separados**
-- 🚀 **Execução eficiente em Termux e Linux**
+- 🚀 **Execução eficiente usando o Termux no Android e no Linux**
 
 ---
 
