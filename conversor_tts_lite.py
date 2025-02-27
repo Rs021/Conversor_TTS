@@ -482,6 +482,84 @@ def ler_arquivo(caminho: str) -> str:
     print(f"❌ Não foi possível ler o arquivo {caminho}. Verifique o encoding.")
     return None
 
+
+def atualizar_script():
+    """
+    Atualiza o script baixando a versão mais recente diretamente do GitHub.
+    Sobrescreve o arquivo atual e oferece opção de reiniciar automaticamente.
+    """
+    import shutil
+
+    url = "https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/conversor_tts_lite.py"
+    arquivo_temp = "conversor_tts_lite_temp.py"
+    arquivo_atual = sys.argv[0]
+
+    print("\n🔄 Iniciando atualização do Conversor TTS...")
+
+    try:
+        subprocess.run(["curl", "-o", arquivo_temp, url], check=True)
+        print("✅ Nova versão baixada com sucesso.")
+    except subprocess.CalledProcessError:
+        print("❌ Erro ao baixar com curl. Tentando com wget...")
+        try:
+            subprocess.run(["wget", "-O", arquivo_temp, url], check=True)
+            print("✅ Nova versão baixada com sucesso.")
+        except subprocess.CalledProcessError:
+            print("❌ Falha ao baixar a atualização. Verifique sua conexão com a internet.")
+            return
+
+    try:
+        shutil.move(arquivo_temp, arquivo_atual)
+        print("✅ Atualização concluída com sucesso!")
+    except Exception as e:
+        print(f"❌ Erro ao substituir o arquivo: {e}")
+        return
+
+    opcao = input("\n🔄 Deseja reiniciar o script agora? (S/N): ").strip().lower()
+    if opcao == 's':
+        print("🔄 Reiniciando...")
+        os.execv(sys.executable, [sys.executable] + sys.argv)
+
+
+
+def exibir_menu() -> str:
+    print("\n" + "=" * 60)
+    print("""
+    ████████╗████████╗███████╗
+    ╚══██╔══╝╚══██╔══╝██╔════╝
+       ██║      ██║   ███████╗
+       ██║      ██║   ╚════██║
+       ██║      ██║   ███████║
+       ╚═╝      ╚═╝   ╚══════╝
+    """)
+    print("=" * 60)
+    print("\n\033[1;36;1m🎯 MENU PRINCIPAL\033[0m")
+    print("-" * 50)
+    print("\n\033[1;32;1m[1] 🚀 INICIAR")
+    print("\033[1;34;1m[2] 🎙️ VOZES")
+    print("\033[1;33;1m[3] ❓ AJUDA")
+    print("\033[1;35;1m[4] 🔄 ATUALIZAR SCRIPT")
+    print("\033[1;31;1m[5] 🚪 SAIR\033[0m")
+    print("-" * 50)
+    return obter_opcao("\n\033[1;36;1m🔹 Escolha: \033[0m", ['1', '2', '3', '4', '5'])
+
+
+
+async def main() -> None:
+    while True:
+        opcao = exibir_menu()
+        if opcao == '1':
+            await converter_audio()
+        elif opcao == '2':
+            await testar_vozes()
+        elif opcao == '3':
+            exibir_ajuda()
+        elif opcao == '4':
+            atualizar_script()
+        elif opcao == '5':
+            print("\n👋 Obrigado por usar o Conversor TTS Lite!")
+            break
+
 # =============================================================================
 # INTERFACE DO USUÁRIO (CLI)
 # =============================================================================
@@ -624,7 +702,7 @@ async def testar_vozes() -> None:
     input("\n🔹 Pressione Enter para voltar ao menu...")
     limpar_tela()
 
-async def main() -> None:
+#async def main() -> None:
     """
     Função principal que exibe o menu e direciona para as funções correspondentes.
     """
