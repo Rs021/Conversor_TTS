@@ -45,7 +45,7 @@ Apenas certifique-se de que o Python 3.6 ou superior está instalado:
 
 ### 1.	Clone este repositório:
 
-	git clone https://github.com/JonJonesBR/conversor-tts.git cd conversor-tts 
+	git clone https://github.com/JonJonesBR/Conversor-TTS.git cd conversor-tts 
 
 ### 2. Instale as dependências necessárias: 
 
@@ -129,7 +129,9 @@ Apenas certifique-se de que o Python 3.6 ou superior está instalado:
 	
    •	📚 Guia oficial do Termux: [Leia aqui](https://wiki.termux.com/wiki/Main_Page) - Traduza a página com o google tradutor no Chrome 😁
 	
-   •	🎤 Baixar o repositório deste Conversor TTS: [Clique aqui](
+   •	🎤 Baixar o repositório deste Conversor TTS: [Clique aqui](https://github.com/JonJonesBR/Conversor_TTS/archive/refs/heads/main.zip)
+
+   •	🐍 Baixar o arquivo Python do Conversor TTS: [Clique aqui]()
 
 ### •	🛠️ Comandos úteis do Termux:
 ```bash 
