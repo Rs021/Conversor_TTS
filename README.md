@@ -43,11 +43,19 @@ Apenas certifique-se de que o Python 3.6 ou superior está instalado:
 ```
 ## 🚀 Instalação do Conversor TTS
 
-### 1.	Clone este repositório:
-
-	git clone https://github.com/JonJonesBR/Conversor-TTS && cd Conversor-TTS 
-
-### 2. Instale as dependências necessárias: 
+### 1.	Baixe o script no seu Termux:
+```bash
+   curl -o conversor_tts_lite.py https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/conversor_tts_lite.py
+```
+   OU
+```bash
+   wget -O conversor_tts_lite.py https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/conversor_tts_lite.py 
+```
+### 2. Acesse o local do script:
+```bash
+   cd Conversor-TTS 
+```
+### 3. Instale as dependências necessárias: 
 
 	pip install edge-tts langdetect unidecode num2words chardet 
 
