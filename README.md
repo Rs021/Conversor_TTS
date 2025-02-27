@@ -41,32 +41,30 @@ sudo apt update && sudo apt install python3 python3-pip git -y
 
 ## 🚀 Instalação do Conversor TTS
 
-	1.	Clone este repositório:
+### 1.	Clone este repositório:
 
-git clone https://github.com/[seu-usuario]/conversor-tts.git
-cd conversor-tts
+	git clone https://github.com/JonJonesBR/conversor-tts.git cd conversor-tts 
 
+### 2. Instale as dependências necessárias: 
 
-	2.	Instale as dependências necessárias:
-
-pip install edge-tts langdetect unidecode num2words chardet
+	pip install edge-tts langdetect unidecode num2words chardet 
 
 ## 💻 Como Usar
 
-	1.	Execute o script:
+### 1. Execute o script: 
 
-python conversor_tts_lite.py
+	python conversor_tts_lite.py
 
-	2.	No menu principal, você terá as seguintes opções:
+### 2.	No menu principal, você terá as seguintes opções:
 
-	•	🚀 INICIAR: Começa o processo de conversão
+   •	🚀 INICIAR: Começa o processo de conversão
 	•	🎙️ VOZES: Testa as vozes disponíveis
 	•	❓ AJUDA: Exibe o guia de uso
 	•	🚪 SAIR: Encerra o programa
 
-	3.	Para converter um texto:
+### 3.	Para converter um texto:
 
-	•	Salve seu texto em um arquivo .txt
+   •	Salve seu texto em um arquivo .txt
 	•	Coloque o arquivo na pasta Downloads
 	•	Escolha a opção INICIAR
 	•	Selecione o arquivo de texto
@@ -75,7 +73,7 @@ python conversor_tts_lite.py
 
 ## 🎙️ Vozes Disponíveis
 
-	•	Thalita (padrão) - Otimizada para múltiplos idiomas
+   •	Thalita (padrão) - Otimizada para múltiplos idiomas
 	•	Francisca - Voz feminina alternativa
 	•	Antonio - Voz masculina
 
@@ -83,7 +81,7 @@ python conversor_tts_lite.py
 
 ### 📜 Processamento Inteligente
 
-	•	🔢 Números para texto (ex.: “1234” → “mil duzentos e trinta e quatro”)
+   •	🔢 Números para texto (ex.: “1234” → “mil duzentos e trinta e quatro”)
 	•	🏆 Números ordinais (ex.: “1º” → “primeiro”)
 	•	🏛️ Números romanos (ex.: “Capítulo IV” → “Capítulo 4”)
 	•	📝 Abreviações expandidas (ex.: “Dr.” → “Doutor”, “Sr.” → “Senhor”)
@@ -91,13 +89,13 @@ python conversor_tts_lite.py
 
 ## 🔄 Controle de Conversão
 
-	•	⏸️ Pausar e retomar: Se interrompido, o progresso é salvo
+   •	⏸️ Pausar e retomar: Se interrompido, o progresso é salvo
 	•	📦 Escolha do formato de saída: Unificar áudio ou manter arquivos separados
 	•	🛑 Interrupção segura: Pressione Ctrl+C para interromper e decidir o que fazer com os arquivos gerados
 
 ## 🚀 Execução Otimizada
 
-	•	📂 Leitura automática de arquivos com detecção de encoding
+   •	📂 Leitura automática de arquivos com detecção de encoding
 	•	🔍 Aviso se o texto não estiver em português
 	•	🔊 Ajuste dinâmico de pausas para melhor entonação
 	•	🏗️ Estrutura modular para fácil personalização
@@ -108,22 +106,23 @@ python conversor_tts_lite.py
 	•	📥 Baixar Termux (GitHub): Clique aqui
 	•	📚 Guia oficial do Termux: Leia aqui
 	•	🎤 Baixar o repositório deste Conversor TTS: Clique aqui
-	•	🛠️ Comandos úteis do Termux:
 
-termux-setup-storage  # Concede acesso ao armazenamento
-apt update && apt upgrade -y  # Atualiza os pacotes do Termux
-apt install python git -y  # Instala Python e Git
-pip install edge-tts langdetect unidecode num2words chardet  # Instala dependências
+### •	🛠️ Comandos úteis do Termux:
+
+	termux-setup-storage  # Concede acesso ao armazenamento
+	apt update && apt upgrade -y  # Atualiza os pacotes do Termux 
+	apt install python git -y  # Instala Python e Git 
+	pip install edge-tts langdetect unidecode num2words chardet  # Instala dependências 
 
 ## ⚠️ Observações
 
-	•	O arquivo de áudio será salvo na pasta de Downloads
+   •	O arquivo de áudio será salvo na pasta de Downloads
 	•	O nome do arquivo de áudio será baseado na primeira linha do texto
 	•	A conversão requer conexão com a internet
 	•	Para melhor compatibilidade no Termux, conceda permissões com:
 
-termux-setup-storage
-
+	termux-setup-storage  # Concede acesso ao armazenamento
+	
 ## 📄 Licença
 
 Este projeto está sob a licença MIT. Veja o arquivo LICENSE para mais detalhes.
