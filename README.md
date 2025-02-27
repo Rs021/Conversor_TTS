@@ -127,9 +127,9 @@ Apenas certifique-se de que o Python 3.6 ou superior está instalado:
 	
    •	📥 Baixar Termux (GitHub): [Clique aqui](https://github.com/termux/termux-app/releases)
 	
-   •	📚 Guia oficial do Termux: [Leia aqui]
+   •	📚 Guia oficial do Termux: [Leia aqui](https://wiki.termux.com/wiki/Main_Page) - Traduza a página com o google tradutor no Chrome 😁
 	
-   •	🎤 Baixar o repositório deste Conversor TTS: [Clique aqui]
+   •	🎤 Baixar o repositório deste Conversor TTS: [Clique aqui](
 
 ### •	🛠️ Comandos úteis do Termux:
 ```bash 
