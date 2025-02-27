@@ -123,13 +123,13 @@ Apenas certifique-se de que o Python 3.6 ou superior está instalado:
 
 ## 🔗 Links Úteis
 
-   •	📥 Baixar Termux (F-Droid): Clique aqui (https://f-droid.org/packages/com.termux/)
+   •	📥 Baixar Termux (F-Droid): [Clique aqui] (https://f-droid.org/packages/com.termux/)
 	
-   •	📥 Baixar Termux (GitHub): Clique aqui
+   •	📥 Baixar Termux (GitHub): [Clique aqui] (https://github.com/termux/termux-app/releases)
 	
-   •	📚 Guia oficial do Termux: Leia aqui
+   •	📚 Guia oficial do Termux: [Leia aqui]
 	
-   •	🎤 Baixar o repositório deste Conversor TTS: Clique aqui
+   •	🎤 Baixar o repositório deste Conversor TTS: [Clique aqui]
 
 ### •	🛠️ Comandos úteis do Termux:
 ```bash 
