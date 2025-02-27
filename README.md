@@ -30,7 +30,9 @@ Para utilizar este conversor de texto para fala no Android, você precisará ins
 2. **Após instalar o Termux, execute os seguintes comandos:**
    ```bash
    termux-setup-storage  # Concede acesso ao armazenamento
+   
    apt update && apt upgrade -y  # Atualiza os pacotes do Termux
+   
    apt install python git -y  # Instala Python e Git
 
 ### 🔵 Linux
@@ -108,12 +110,15 @@ sudo apt update && sudo apt install python3 python3-pip git -y
 	•	🎤 Baixar o repositório deste Conversor TTS: Clique aqui
 
 ### •	🛠️ Comandos úteis do Termux:
-
+```bash 
 	termux-setup-storage  # Concede acesso ao armazenamento
-	apt update && apt upgrade -y  # Atualiza os pacotes do Termux 
-	apt install python git -y  # Instala Python e Git 
-	pip install edge-tts langdetect unidecode num2words chardet  # Instala dependências 
-
+	
+   apt update && apt upgrade -y  # Atualiza os pacotes do Termux 
+	
+   apt install python git -y  # Instala Python e Git 
+	
+   pip install edge-tts langdetect unidecode num2words chardet  # Instala dependências 
+```
 ## ⚠️ Observações
 
    •	O arquivo de áudio será salvo na pasta de Downloads
