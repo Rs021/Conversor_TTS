@@ -64,7 +64,7 @@ Apenas certifique-se de que o Python 3.6 ou superior está instalado:
 
 ### 3. Instale as dependências necessárias: 
 
-	pip install edge-tts langdetect unidecode num2words chardet 
+	pip install edge-tts langdetect unidecode num2words chardet && python -m pip install --user requests
 
 ## 💻 Como Usar
 
