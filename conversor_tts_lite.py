@@ -10,6 +10,7 @@ import select
 import platform
 import zipfile
 import shutil
+import time  # Usado para medir os tempos de conversão
 
 # =============================================================================
 # GARANTINDO O MÓDULO REQUESTS
@@ -77,7 +78,7 @@ def detectar_sistema():
     return sistema
 
 # =============================================================================
-# FUNÇÕES PARA INSTALAÇÃO DO POPPLER
+# FUNÇÕES PARA INSTALAÇÃO DO POPPLER (Windows)
 # =============================================================================
 def instalar_poppler_windows():
     """Instala o Poppler no Windows automaticamente."""
@@ -186,16 +187,13 @@ def converter_pdf(caminho_pdf: str, caminho_txt: str) -> bool:
             subprocess.run(["pdftotext", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
         except FileNotFoundError:
             if sistema['macos']:
-                print("❌ O pdftotext não está instalado no sistema.")
-                print("💡 Para instalar o pdftotext no macOS: brew install poppler")
+                print("❌ O pdftotext não está instalado no sistema. Instale com: brew install poppler")
                 return False
             elif sistema['linux']:
                 if sistema['termux']:
-                    print("❌ O pdftotext não está instalado no sistema.")
-                    print("💡 Para instalar o pdftotext no Termux: pkg install poppler")
+                    print("❌ O pdftotext não está instalado no sistema. Instale com: pkg install poppler")
                 else:
-                    print("❌ O pdftotext não está instalado no sistema.")
-                    print("💡 Para instalar o pdftotext no Linux: sudo apt-get install poppler-utils")
+                    print("❌ O pdftotext não está instalado no sistema. Instale com: sudo apt-get install poppler-utils")
                 return False
     if sistema['windows'] and pdftotext_path:
         resultado = subprocess.run(
@@ -248,7 +246,6 @@ def instalar_dependencia_termux(pkg: str) -> None:
         print(f"✅ Pacote Termux {pkg} instalado com sucesso!")
     except subprocess.CalledProcessError as e:
         print(f"❌ Erro ao instalar pacote Termux {pkg}: {e}")
-        print("💡 Tente executar 'pkg update' manualmente e tente novamente")
         sys.exit(1)
     except Exception as e:
         print(f"❌ Erro inesperado ao instalar {pkg}: {e}")
@@ -270,7 +267,6 @@ def instalar_dependencia_python(nome_pkg: str, pip_nome: str) -> None:
             print(f"✅ Módulo Python {nome_pkg} instalado com sucesso!")
         except subprocess.CalledProcessError as e:
             print(f"❌ Erro ao instalar módulo Python {nome_pkg}: {e}")
-            print(f"💡 Tente instalar manualmente: pip install {pip_nome}")
             sys.exit(1)
 
 def instalar_poppler() -> bool:
@@ -293,8 +289,7 @@ def instalar_poppler() -> bool:
             try:
                 subprocess.run(['brew', '--version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             except FileNotFoundError:
-                print("❌ Homebrew não está instalado no macOS.")
-                print("💡 Instale o Homebrew primeiro: /bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"")
+                print("❌ Homebrew não está instalado no macOS. Instale-o e depois execute: brew install poppler")
                 return False
             subprocess.run(['brew', 'install', 'poppler'], check=True)
             print("✅ poppler instalado com sucesso no macOS!")
@@ -356,15 +351,9 @@ def instalar_poppler() -> bool:
                     return True
                 except (subprocess.CalledProcessError, FileNotFoundError):
                     print("⚠️ Poppler foi instalado, mas o pdftotext ainda não está disponível.")
-                    print("💡 Tente reiniciar o terminal e executar o script novamente.")
                     return False
             except Exception as e:
                 print(f"❌ Erro durante a instalação automática do Poppler: {str(e)}")
-                print("💡 Por favor, instale manualmente:")
-                print("   1. Baixe o Poppler para Windows em https://github.com/oschwartz10612/poppler-windows/releases/")
-                print("   2. Extraia o arquivo ZIP para uma pasta (ex: C:\\Poppler)")
-                print("   3. Adicione o diretório bin (ex: C:\\Poppler\\bin) ao PATH do sistema")
-                print("   4. Reinicie o terminal e execute este script novamente")
                 return False
         else:
             print("❌ Sistema operacional não suportado para instalação automática.")
@@ -402,18 +391,12 @@ def verificar_dependencias() -> None:
             print("📦 Poppler não encontrado. Iniciando instalação automática...")
             if not instalar_poppler_windows():
                 print("❌ Não foi possível instalar o pdftotext automaticamente.")
-                print("💡 Para instalar o pdftotext manualmente:")
-                print("   - Windows: Baixe e instale o Poppler em https://github.com/oschwartz10612/poppler-windows/releases/")
-                print("     Adicione o diretório bin do Poppler ao PATH do sistema")
         elif sistema['macos']:
-            print("❌ O pdftotext não está instalado no sistema.")
-            print("💡 Para instalar o pdftotext no macOS: brew install poppler")
+            print("❌ O pdftotext não está instalado no sistema. Instale com: brew install poppler")
         elif sistema['termux']:
-            print("❌ O pdftotext não está instalado no sistema.")
-            print("💡 Para instalar o pdftotext no Termux: pkg install poppler")
+            print("❌ O pdftotext não está instalado no sistema. Instale com: pkg install poppler")
         else:
-            print("❌ O pdftotext não está instalado no sistema.")
-            print("💡 Para instalar o pdftotext no Linux: sudo apt-get install poppler-utils")
+            print("❌ O pdftotext não está instalado no sistema. Instale com: sudo apt-get install poppler-utils")
 
 # =============================================================================
 # IMPORTAÇÃO DE MÓDULOS TERCEIRIZADOS
@@ -598,8 +581,10 @@ def exibir_ajuda() -> None:
     input("\nPressione ENTER para voltar ao menu principal...")
 
 async def testar_voz(voz: str) -> None:
-    """Testa uma voz específica com um texto de exemplo e salva a amostra em uma pasta na pasta Download do Android.
-    Após gerar o teste, retorna automaticamente ao menu principal."""
+    """
+    Testa uma voz específica com um texto de exemplo e salva a amostra
+    em uma pasta na pasta Download do Android. Após a geração, retorna automaticamente.
+    """
     texto_teste = "Olá! Esta é uma demonstração da minha voz."
     communicate = edge_tts.Communicate(texto_teste, voz)
     sistema = detectar_sistema()
@@ -620,14 +605,12 @@ async def testar_voz(voz: str) -> None:
                 except subprocess.TimeoutExpired:
                     print("Aviso: reprodução de áudio demorou, continuando...")
             else:
-                print("Termux-media-player não disponível, não reproduzindo áudio.")
+                print("termux-media-player não disponível, áudio não reproduzido.")
         elif sistema['windows']:
             os.startfile(file_path)
         else:
-            # Usa Popen para não travar a execução
             subprocess.Popen(['xdg-open', file_path])
-        await asyncio.sleep(1)  # Tempo breve para garantir a criação do arquivo
-        # Retorna automaticamente ao menu principal sem esperar por input do usuário.
+        await asyncio.sleep(1)
     except Exception as e:
         print(f"\n❌ Erro ao testar voz: {str(e)}")
 
@@ -806,7 +789,7 @@ async def converter_texto_para_audio(texto: str, voz: str, caminho_saida: str) -
         return False
 
 async def iniciar_conversao() -> None:
-    """Inicia o processo de conversão de texto para áudio."""
+    """Inicia o processo de conversão de texto para áudio com barra de progresso."""
     caminho_arquivo = selecionar_arquivo()
     if not caminho_arquivo:
         return
@@ -829,24 +812,31 @@ async def iniciar_conversao() -> None:
         os.makedirs(diretorio_saida)
     arquivo_progresso = os.path.join(diretorio_saida, ".progresso")
     indice_inicial = ler_progresso(arquivo_progresso)
-    if indice_inicial > 0 and indice_inicial < total_partes:
-        print(f"\n🔄 Retomando conversão a partir da parte {indice_inicial + 1} de {total_partes}")
-        continuar = obter_opcao("Continuar de onde parou? (s/n): ", ['s', 'n'])
-        if continuar == 'n':
-            indice_inicial = 0
-    for i in range(indice_inicial, total_partes):
-        parte = partes[i]
-        print(f"\n🔊 Convertendo parte {i + 1} de {total_partes}...")
-        caminho_saida_parte = os.path.join(diretorio_saida, f"{nome_base}_parte_{i+1}.mp3")
+    durations = []
+    overall_start = time.time()
+    for i, parte in enumerate(partes[indice_inicial:], start=indice_inicial + 1):
+        print(f"\n🔊 Convertendo parte {i} de {total_partes}...")
+        chunk_start = time.time()
+        caminho_saida_parte = os.path.join(diretorio_saida, f"{nome_base}_parte_{i}.mp3")
         sucesso = await converter_texto_para_audio(parte, voz_escolhida, caminho_saida_parte)
+        chunk_duration = time.time() - chunk_start
+        durations.append(chunk_duration)
         if sucesso:
-            print(f"✅ Parte {i + 1} concluída: {caminho_saida_parte}")
-            gravar_progresso(arquivo_progresso, i + 1)
+            gravar_progresso(arquivo_progresso, i)
         else:
-            print(f"❌ Falha ao processar parte {i + 1}")
+            print(f"❌ Falha ao processar parte {i}")
             input("\nPressione ENTER para continuar...")
             return
-    print(f"\n🎉 Conversão concluída! Arquivos salvos em: {diretorio_saida}")
+        avg_time = sum(durations) / len(durations)
+        remaining = total_partes - i
+        est_time = remaining * avg_time
+        progress_percent = (i / total_partes) * 100
+        bar_length = 30
+        filled_length = int(round(bar_length * i / total_partes))
+        bar = '#' * filled_length + '-' * (bar_length - filled_length)
+        print(f"Progresso: |{bar}| {progress_percent:.1f}% | Tempo restante estimado: {est_time:.1f} s | Velocidade: {1/avg_time:.2f} chunks/s")
+    overall_time = time.time() - overall_start
+    print(f"\n🎉 Conversão concluída em {overall_time:.1f} s! Arquivos salvos em: {diretorio_saida}")
     input("\nPressione ENTER para continuar...")
 
 async def main() -> None:
