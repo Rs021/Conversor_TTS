@@ -6,6 +6,7 @@ import asyncio
 import re
 import signal
 from pathlib import Path
+import select
 
 # =============================================================================
 # CONFIGURAÇÃO E CONSTANTES
@@ -22,7 +23,52 @@ ENCODINGS_TENTATIVAS = ['utf-8', 'utf-16', 'iso-8859-1', 'cp1252']
 BUFFER_IO = 32768
 
 # Global para interrupção via sinal (Ctrl+C)
+# Ajuste para permitir que o segundo Ctrl+C finalize o script imediatamente
 interrupcao_requisitada = False
+
+# =============================================================================
+# FUNÇÕES PARA CONVERSÃO DE PDF
+# =============================================================================
+def pdf_para_txt(caminho_pdf: str, caminho_txt: str) -> bool:
+    """
+    Converte PDF para TXT utilizando PyMuPDF.
+    """
+    try:
+        import fitz  # PyMuPDF
+        with fitz.open(caminho_pdf) as doc:
+            texto = ""
+            for pagina in doc:
+                texto += pagina.get_text()
+        with open(caminho_txt, 'w', encoding='utf-8') as arquivo_txt:
+            arquivo_txt.write(texto)
+        print(f"✅ PDF convertido para TXT via PyMuPDF: {caminho_txt}")
+        return True
+    except Exception as e:
+        print(f"❌ Erro ao converter PDF para TXT (PyMuPDF): {e}")
+        return False
+
+def pdf_para_txt_pdftotext(caminho_pdf: str, caminho_txt: str) -> bool:
+    """
+    Converte PDF para TXT utilizando o comando pdftotext.
+    """
+    try:
+        comando = ["pdftotext", "-layout", caminho_pdf, caminho_txt]
+        subprocess.run(comando, check=True)
+        print(f"✅ PDF convertido para TXT com pdftotext: {caminho_txt}")
+        return True
+    except Exception as e:
+        print(f"❌ Erro ao converter PDF com pdftotext: {e}")
+        return False
+
+def converter_pdf(caminho_pdf: str, caminho_txt: str) -> bool:
+    """
+    Tenta converter PDF para TXT utilizando pdftotext; se falhar, utiliza PyMuPDF.
+    """
+    if pdf_para_txt_pdftotext(caminho_pdf, caminho_txt):
+        return True
+    else:
+        print("⚠️ pdftotext falhou. Tentando fallback com PyMuPDF...")
+        return pdf_para_txt(caminho_pdf, caminho_txt)
 
 # =============================================================================
 # FUNÇÕES DE VERIFICAÇÃO DE AMBIENTE E DEPENDÊNCIAS
@@ -89,7 +135,7 @@ def verificar_dependencias() -> None:
         'edge-tts': 'edge-tts',
         'langdetect': 'langdetect',
         'unidecode': 'unidecode',
-        'num2words': 'num2words'
+        'num2words': 'num2words',
     }
     for nome_pkg, pip_nome in dependencias_python.items():
         instalar_dependencia_python(nome_pkg, pip_nome)
@@ -155,7 +201,7 @@ def ler_progresso(arquivo_progresso: str) -> int:
 def limpar_nome_arquivo(nome: str) -> str:
     """
     Remove ou substitui caracteres inválidos em sistemas de arquivos,
-    como : /  * ? " < > | etc. 
+    como : /  * ? " < > | etc.
     """
     caracteres_invalidos = r'/:*?"<>|'
     for c in caracteres_invalidos:
@@ -240,13 +286,25 @@ def otimizar_texto_tts(texto: str) -> str:
     }
     for chave, valor in caracteres_problematicos.items():
         texto = texto.replace(chave, valor)
-    texto = re.sub(r'(CAPÍTULO|Capítulo|TÍTULO|Título|Parte|PARTE|Livro|LIVRO)\s+([IVXLCDM]+)',
-                   lambda m: f"{m.group(1)} {romano_para_decimal(m.group(2))}",
-                   texto)
+
+    # Converte CAPÍTULO IV etc. em CAPÍTULO 4
+    texto = re.sub(
+        r'(CAPÍTULO|Capítulo|TÍTULO|Título|Parte|PARTE|Livro|LIVRO)\s+([IVXLCDM]+)',
+        lambda m: f"{m.group(1)} {romano_para_decimal(m.group(2))}",
+        texto
+    )
+
+    # Converte 1º, 2ª etc. para "primeiro", "segunda", etc.
     texto = re.sub(r'(\d+)([ºª])', converter_ordinal, texto)
-    texto = re.sub(r'\b([IVXLCDM]+)\b',
-                   lambda m: str(romano_para_decimal(m.group(1))),
-                   texto)
+
+    # Converte números romanos isolados em decimal
+    texto = re.sub(
+        r'\b([IVXLCDM]+)\b',
+        lambda m: str(romano_para_decimal(m.group(1))),
+        texto
+    )
+
+    # Substituições pontuais
     substituicoes = {
         'más': 'mas', 'pôr': 'por', 'têm': 'tem',
         'à': 'a', 'às': 'as', 'é': 'eh',
@@ -263,44 +321,94 @@ def otimizar_texto_tts(texto: str) -> str:
     texto = texto.lower()
     for original, corrigida in substituicoes.items():
         texto = re.sub(rf'\b{original}\b', corrigida, texto, flags=re.IGNORECASE)
+
+    # Converte todos os números para texto
     texto = re.sub(r'\d+', lambda m: num2words(int(m.group()), lang='pt_BR'), texto)
+
+    # Ajusta pontuações para inserir pausas
     pontuacoes = {'.': '. ', ',': ', ', ';': '; ', ':': ': ', '!': '! ', '?': '? ', '...': '... '}
     for sinal, substituicao in pontuacoes.items():
         texto = texto.replace(sinal, substituicao)
+
+    # Ajusta múltiplos pontos
     texto = re.sub(r'\.{3,}', '... ', texto)
+
+    # Remove espaços duplicados
     texto = re.sub(r'\s+', ' ', texto)
     return texto.strip()
 
 # =============================================================================
 # PROCESSAMENTO DE ÁUDIO
 # =============================================================================
+
 def tratar_sinal_interrupcao(signum, frame) -> None:
     """
-    Manipulador de sinal para Ctrl+C: ativa a flag global de interrupção.
+    Manipulador de sinal para Ctrl+C: 
+    - Se for a primeira vez, define interrupcao_requisitada = True e avisa.
+    - Se for a segunda vez, encerra o script imediatamente.
     """
     global interrupcao_requisitada
-    interrupcao_requisitada = True
-    print("\n\n🛑 Pressione Ctrl+C novamente para interromper a conversão...")
+    if interrupcao_requisitada:
+        print("\n\n🛑 Interrupção forçada! Encerrando...")
+        sys.exit(1)
+    else:
+        interrupcao_requisitada = True
+        print("\n\n🛑 Pressione Ctrl+C novamente para interromper a conversão imediatamente...")
 
 signal.signal(signal.SIGINT, tratar_sinal_interrupcao)
+
+def verificar_interrupcao() -> bool:
+    """Verifica se o usuário pressionou a tecla 'q' para interromper a conversão."""
+    global interrupcao_requisitada
+    # Implementação cross-platform para verificar entrada do teclado
+    if sys.platform == 'win32':
+        try:
+            import msvcrt
+            if msvcrt.kbhit():
+                tecla = msvcrt.getch().decode('utf-8').lower()
+                if tecla == 'q':
+                    interrupcao_requisitada = True
+                    print("\n\n🛑 Conversão interrompida! Pressione Enter para continuar...")
+                    input()
+                    return True
+        except ImportError:
+            pass
+    else:
+        # Implementação para sistemas Unix-like
+        if select.select([sys.stdin], [], [], 0)[0]:
+            tecla = sys.stdin.read(1).lower()
+            if tecla == 'q':
+                interrupcao_requisitada = True
+                print("\n\n🛑 Conversão interrompida! Pressione Enter para continuar...")
+                input()
+                return True
+    return False
 
 async def tratar_interrupcao(temp_files: list, arquivo_saida: str) -> bool:
     """
     Trata a interrupção da conversão, oferecendo opções para o usuário:
-      1. Manter arquivos parciais separados.
-      2. Unificar arquivos convertidos.
-      3. Excluir arquivos convertidos.
+      1. Retornar ao menu inicial
+      2. Manter arquivos parciais separados
+      3. Unificar arquivos convertidos
+      4. Excluir arquivos convertidos
     Também pergunta se o registro de progresso deve ser mantido.
     """
     print("\n\n🛑 Conversão interrompida!")
     print("\nEscolha uma opção:")
-    print("[1] Manter arquivos parciais separados")
-    print("[2] Unificar arquivos convertidos")
-    print("[3] Excluir arquivos convertidos")
-    opcao = obter_opcao("\n🔹 Sua escolha ([1/2/3]): ", ['1', '2', '3'])
+    print("[1] Retornar ao menu inicial")
+    print("[2] Manter arquivos parciais separados")
+    print("[3] Unificar arquivos convertidos")
+    print("[4] Excluir arquivos convertidos")
+    opcao = obter_opcao("\n🔹 Sua escolha ([1/2/3/4]): ", ['1', '2', '3', '4'])
+    
     if opcao == '1':
-        print("\n✅ Arquivos parciais mantidos separadamente.")
+        print("\n✅ Retornando ao menu inicial...")
+        if len(temp_files) > 0:
+            print("\n💾 Os arquivos parciais foram mantidos e poderão ser retomados posteriormente.")
     elif opcao == '2':
+        print("\n✅ Arquivos parciais mantidos separadamente.")
+        print("\n💡 Você pode encontrar os arquivos com a extensão .partXXX.mp3")
+    elif opcao == '3':
         print("\n🔄 Unificando arquivos convertidos...")
         try:
             with open(arquivo_saida, 'wb') as outfile:
@@ -315,9 +423,10 @@ async def tratar_interrupcao(temp_files: list, arquivo_saida: str) -> bool:
                         os.remove(temp_file)
                         print(f"\n🗑️ Arquivo temporário removido: {temp_file}")
             print("✅ Arquivos unificados com sucesso!")
+            print(f"\n💾 Arquivo final salvo como: {arquivo_saida}")
         except Exception as e:
             print(f"\n⚠️ Erro ao unificar arquivos: {e}")
-    else:
+    else:  # opcao == '4'
         print("\n🗑️ Excluindo arquivos convertidos...")
         for temp_file in temp_files:
             try:
@@ -326,6 +435,7 @@ async def tratar_interrupcao(temp_files: list, arquivo_saida: str) -> bool:
             except Exception as e:
                 print(f"\n⚠️ Erro ao excluir {temp_file}: {e}")
         print("✅ Arquivos excluídos com sucesso!")
+
     arquivo_progresso = f"{arquivo_saida}.progress"
     if os.path.exists(arquivo_progresso):
         print("\n💾 Deseja manter o registro de progresso para retomar a conversão posteriormente?")
@@ -338,8 +448,14 @@ async def tratar_interrupcao(temp_files: list, arquivo_saida: str) -> bool:
                 print(f"\n⚠️ Erro ao apagar registro de progresso: {e}")
         else:
             print("✅ Registro de progresso mantido para continuação posterior.")
-    limpar_tela()
-    return False
+            print("\n💡 Você poderá retomar a conversão do ponto onde parou selecionando o mesmo arquivo de saída.")
+    
+    if opcao == '1':
+        limpar_tela()
+        return True  # Indica que deve retornar ao menu
+    else:
+        print("\n👋 Obrigado por usar o Conversor TTS Lite!")
+        sys.exit(0)  # Encerra o script para as opções 2, 3 e 4
 
 async def processar_audio(texto: str, arquivo_saida: str, voz: str, chunk_size: int = 2000) -> bool:
     """
@@ -347,48 +463,63 @@ async def processar_audio(texto: str, arquivo_saida: str, voz: str, chunk_size: 
     Gera arquivos temporários para cada parte e, dependendo da escolha do usuário,
     unifica os arquivos ao final.
     """
-    temp_files = []
-    primeira_linha = texto.strip().split('\n')[0].strip()
-    if primeira_linha:
-        linha_limpa = limpar_nome_arquivo(primeira_linha)
-        nome_base = Path(arquivo_saida).parent / linha_limpa
-        arquivo_saida = f"{nome_base}.mp3"
+    # Não renomearemos o arquivo de saída pela primeira linha do texto
+    # para manter o mesmo nome base informado.
+
+    # Pergunta ao usuário se quer manter partes separadas ou unificar
     print("\n📦 Preferência de arquivos:")
     print("[Enter/N] Unificar arquivos e excluir partes (padrão)")
     print("[S] Manter arquivos separados")
     opcao = input("\n🔹 Sua escolha: ").strip().upper()
     manter_separado = (opcao == 'S')
+
     if not validar_texto_pt_br(texto):
         print("\n🛑 Conversão cancelada pelo usuário.")
         return False
+
     texto = otimizar_texto_tts(texto)
+
     global interrupcao_requisitada
-    interrupcao_requisitada = False
+    interrupcao_requisitada = False  # Redefine a flag a cada conversão
+
+    # Ajusta o chunk_size dinamicamente, mas não muito pequeno
     chunk_size = max(2000, min(len(texto) // 10, 5000))
     partes = [texto[i:i + chunk_size] for i in range(0, len(texto), chunk_size)]
     total_partes = len(partes)
     print(f"\n🔄 Processando {total_partes} partes...")
-    print("\nPressione Ctrl+C para interromper a conversão a qualquer momento.")
+    print("Pressione 'q' para interromper a conversão a qualquer momento.\n")
+
     arquivo_progresso = f"{arquivo_saida}.progress"
     indice_inicial = ler_progresso(arquivo_progresso)
     if indice_inicial > 0:
-        print(f"\n📝 Retomando a partir da parte {indice_inicial + 1}")
+        print(f"📝 Retomando a partir da parte {indice_inicial + 1}")
+
+    # Lista para armazenar os arquivos temporários
+    temp_files = []
+
+    # Processa cada parte em loop
     for i, parte in enumerate(partes[indice_inicial:], start=indice_inicial + 1):
-        if interrupcao_requisitada:
+        if interrupcao_requisitada or verificar_interrupcao():
             gravar_progresso(arquivo_progresso, i - 1)
             await tratar_interrupcao(temp_files, arquivo_saida)
             limpar_tela()
             return False
+
         print(f"\r📊 Progresso: {i}/{total_partes} ({int(i / total_partes * 100)}%) " + "=" * (i * 20 // total_partes) + ">", end="")
+
         max_tentativas = 5
         for tentativa in range(1, max_tentativas + 1):
             try:
                 comunicador = edge_tts.Communicate(parte.strip(), voz)
+                # Arquivo temporário: <arquivo_saida>.partXYZ.mp3
                 arquivo_temp = f"{arquivo_saida}.part{i:03d}.mp3"
                 await comunicador.save(arquivo_temp)
                 temp_files.append(arquivo_temp)
+
+                # Grava progresso
                 gravar_progresso(arquivo_progresso, i)
                 break
+
             except Exception as e:
                 if tentativa < max_tentativas:
                     tempo_espera = 2 ** tentativa
@@ -397,9 +528,11 @@ async def processar_audio(texto: str, arquivo_saida: str, voz: str, chunk_size: 
                 else:
                     print(f"\n⚠️ Erro ao processar parte {i} após {max_tentativas} tentativas: {e}")
                     continue
+
+    # Se o loop terminar sem interrupção
     if not interrupcao_requisitada:
         if not manter_separado:
-            print("\n📦 Combinando arquivos...")
+            print("\n\n📦 Combinando arquivos...")
             try:
                 with open(arquivo_saida, 'wb') as outfile:
                     for temp_file in temp_files:
@@ -412,6 +545,7 @@ async def processar_audio(texto: str, arquivo_saida: str, voz: str, chunk_size: 
                                     outfile.write(chunk)
                             os.remove(temp_file)
                             print(f"\r🗑️ Arquivo temporário removido: {temp_file}", end="")
+                # Remove arquivo de progresso se existir
                 if os.path.exists(arquivo_progresso):
                     os.remove(arquivo_progresso)
                 print("\n✅ Conversão concluída! Arquivo unificado criado.")
@@ -420,20 +554,26 @@ async def processar_audio(texto: str, arquivo_saida: str, voz: str, chunk_size: 
         else:
             print("\n✅ Conversão concluída! Arquivos mantidos separados.")
         return True
+
     return False
 
 def ler_arquivo(caminho: str) -> str:
+    """
+    Tenta ler o conteúdo do arquivo com detecção de encoding (chardet).
+    """
     try:
         with open(caminho, 'rb') as f:
             conteudo_bruto = f.read()
             resultado = chardet.detect(conteudo_bruto)
             encoding_detectado = resultado.get('encoding')
-            if encoding_detectado is None and b'x00' in conteudo_bruto:
+            # Caso detecte algo nulo mas haja presença de caracteres nulos, tenta 'utf-16-le'
+            if encoding_detectado is None and b'\x00' in conteudo_bruto:
                 encoding_detectado = 'utf-16-le'
             if encoding_detectado:
                 return conteudo_bruto.decode(encoding_detectado)
     except Exception as e:
         print(f"❌ Erro ao ler o arquivo: {e}")
+
     print(f"❌ Não foi possível ler o arquivo {caminho}. Verifique o encoding.")
     return None
 
@@ -509,7 +649,7 @@ def exibir_ajuda() -> None:
     print("📚 GUIA DO CONVERSOR TTS")
     print("-" * 50)
     print("\n1️⃣ PREPARAÇÃO")
-    print("• Salve seu texto em um arquivo .txt")
+    print("• Salve seu texto em um arquivo .txt ou .pdf")
     print("• Coloque-o na pasta Downloads")
     print("\n2️⃣ CONVERSÃO")
     print("• Selecione 'Iniciar'")
@@ -522,8 +662,8 @@ def exibir_ajuda() -> None:
     print("• Detecção de idioma (para avisar se não for PT-BR)")
     print("\n4️⃣ DICAS")
     print("• Teste diferentes vozes")
-    print("• Use Ctrl+C para interromper a conversão")
-    print("• O áudio será salvo na pasta Downloads")
+    print("• Use Ctrl+C para interromper a conversão (pressione novamente para sair)")
+    print("• O áudio será salvo em uma pasta específica dentro de Downloads")
     input("\nPressione Enter para voltar...")
     limpar_tela()
 
@@ -543,54 +683,88 @@ def escolher_voz() -> str:
 async def converter_audio() -> None:
     limpar_tela()
     print("\n📖 Conversor de Texto para Fala - Modo Leve")
-    diretorio_padrao = "/storage/emulated/0/Download"
+
+    # Descobrindo o diretório de downloads ou equivalente
+    diretorio_padrao = os.path.expanduser("~/storage/downloads")
     if not os.path.exists(diretorio_padrao):
-        diretorio_padrao = os.path.expanduser("~/storage/downloads")
-        if not os.path.exists(diretorio_padrao):
-            diretorio_padrao = os.path.expanduser("~")
+        diretorio_padrao = os.path.expanduser("~/storage/documents")
+    if not os.path.exists(diretorio_padrao):
+        diretorio_padrao = "/storage/emulated/0/Download"
+    if not os.path.exists(diretorio_padrao):
+        diretorio_padrao = os.path.expanduser("~")
     if not os.path.exists(diretorio_padrao):
         print(f"⚠️ Diretório não encontrado: {diretorio_padrao}")
         print("ℹ️ Dica: Verifique se o Termux tem permissão de acesso ao armazenamento (termux-setup-storage).")
         return
-    arquivos_txt = [f for f in os.listdir(diretorio_padrao) if f.endswith('.txt')]
-    if not arquivos_txt:
-        print("⚠️ Nenhum arquivo TXT encontrado no diretório de downloads!")
+
+    # Lista arquivos .txt e .pdf no diretório
+    arquivos = [f for f in os.listdir(diretorio_padrao) if f.endswith(('.txt', '.pdf'))]
+    if not arquivos:
+        print("⚠️ Nenhum arquivo TXT ou PDF encontrado no diretório de downloads!")
         return
-    print("📄 Arquivos TXT disponíveis:")
-    for indice, arquivo in enumerate(arquivos_txt, start=1):
+
+    print("📄 Arquivos disponíveis:")
+    for indice, arquivo in enumerate(arquivos, start=1):
         print(f"[{indice}] {arquivo}")
+
     opcao = input("\nDigite o número do arquivo desejado: ").strip()
-    while not (opcao.isdigit() and 1 <= int(opcao) <= len(arquivos_txt)):
+    while not (opcao.isdigit() and 1 <= int(opcao) <= len(arquivos)):
         print("⚠️ Opção inválida! Escolha um número da lista.")
         opcao = input("\nDigite o número do arquivo desejado: ").strip()
-    arquivo_selecionado = arquivos_txt[int(opcao) - 1]
+
+    arquivo_selecionado = arquivos[int(opcao) - 1]
     caminho_completo = os.path.join(diretorio_padrao, arquivo_selecionado)
     print(f"\n📄 Lendo arquivo: {arquivo_selecionado}")
+
+    # Se for PDF, converte para TXT temporariamente
+    if arquivo_selecionado.endswith('.pdf'):
+        caminho_txt_temp = caminho_completo.replace('.pdf', '.temp.txt')
+        if not converter_pdf(caminho_completo, caminho_txt_temp):
+            print("⚠️ Falha ao converter PDF. Operação cancelada.")
+            return
+        caminho_completo = caminho_txt_temp
+
     texto = ler_arquivo(caminho_completo)
     if not texto:
         return
+
     voz = escolher_voz()
+
+    # Cria pasta específica para armazenar os arquivos (temporários e final)
     nome_base = Path(caminho_completo).stem
-    diretorio_saida = os.path.join(diretorio_padrao, f"{nome_base}_audio")
-    os.makedirs(diretorio_saida, exist_ok=True)
-    arquivo_saida = os.path.join(diretorio_saida, f"{nome_base}.mp3")
+    pasta_destino = os.path.join(diretorio_padrao, f"{nome_base}_ConversorTTS")
+    os.makedirs(pasta_destino, exist_ok=True)
+
+    # Define o caminho do arquivo final (Dom Casmurro.mp3, por exemplo)
+    arquivo_saida = os.path.join(pasta_destino, f"{nome_base}.mp3")
+
+    # Faz a conversão
     await processar_audio(texto, arquivo_saida, voz)
-    print(f"\n📂 Arquivos salvos em: {diretorio_saida}")
+    print(f"\n📂 Arquivos salvos em: {pasta_destino}")
+
+    # Remove TXT temporário se veio de PDF
+    if arquivo_selecionado.endswith('.pdf') and os.path.exists(caminho_txt_temp):
+        os.remove(caminho_txt_temp)
+
     input("\nPressione Enter para voltar ao menu...")
     limpar_tela()
 
 async def testar_vozes() -> None:
     limpar_tela()
     print("\n🔊 Gerando arquivos de teste para cada voz...\n")
+
     diretorio_testes = "vozes_teste"
     os.makedirs(diretorio_testes, exist_ok=True)
+
     texto_teste = "Este é um teste da voz para conversão de texto em fala."
+
     for voz in VOZES_PT_BR:
         print(f"\n🎙️ Testando voz: {voz}")
         arquivo_mp3 = os.path.join(diretorio_testes, f"{voz}.mp3")
         comunicador = edge_tts.Communicate(texto_teste, voz)
         await comunicador.save(arquivo_mp3)
         print(f"✅ Arquivo salvo: {arquivo_mp3}")
+
     print("\n✅ Testes concluídos!")
     print(f"📂 Arquivos salvos em: {diretorio_testes}")
     input("\nPressione Enter para voltar ao menu...")
