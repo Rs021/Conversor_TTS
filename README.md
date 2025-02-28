@@ -28,7 +28,7 @@ Para utilizar este conversor de texto para fala no Android, você precisará ins
    - **[Baixar Termux (GitHub)](https://github.com/termux/termux-app/releases)**
 
 2. **Após instalar o Termux, execute os seguintes comandos:**
-   ```bash
+```bash
    termux-setup-storage  # Concede acesso ao armazenamento
    
    apt update && apt upgrade -y  # Atualiza os pacotes do Termux
@@ -40,9 +40,11 @@ Para utilizar este conversor de texto para fala no Android, você precisará ins
 ### 🔵 Linux
 
 Apenas certifique-se de que o Python 3.6 ou superior está instalado:
+
 ```bash
    sudo apt update && sudo apt install python3 python3-pip git -y
 ```
+
 ## 🚀 Instalação do Conversor TTS
 
 ### 1.	Baixe o script no seu Termux:
