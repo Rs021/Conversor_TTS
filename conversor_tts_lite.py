@@ -36,7 +36,6 @@ ENCODINGS_TENTATIVAS = ['utf-8', 'utf-16', 'iso-8859-1', 'cp1252']
 BUFFER_IO = 32768
 
 # Global para interrupção via sinal (Ctrl+C)
-# Ajuste para permitir que o segundo Ctrl+C finalize o script imediatamente
 interrupcao_requisitada = False
 
 # =============================================================================
@@ -53,39 +52,28 @@ def detectar_sistema():
         'macos': False,
     }
     
-    # Detecta Windows
     if sistema['nome'] == 'windows':
         sistema['windows'] = True
         return sistema
-    
-    # Detecta macOS
     if sistema['nome'] == 'darwin':
         sistema['macos'] = True
         return sistema
-    
-    # Detecta Linux (incluindo Android/Termux)
     if sistema['nome'] == 'linux':
         sistema['linux'] = True
-        
-        # Verifica se é Android/Termux
         is_android = any([
             'ANDROID_ROOT' in os.environ,
             'TERMUX_VERSION' in os.environ,
             os.path.exists('/data/data/com.termux'),
-            os.path.exists('/system/bin/linker64')  # Comum em Android
+            os.path.exists('/system/bin/linker64')
         ])
-        
         if is_android:
             sistema['android'] = True
-            # Verifica especificamente se é Termux
             if any([
                 'TERMUX_VERSION' in os.environ,
                 os.path.exists('/data/data/com.termux')
             ]):
                 sistema['termux'] = True
-                # Configura variáveis de ambiente específicas do Termux
                 os.environ['PATH'] = f"{os.environ.get('PATH', '')}:/data/data/com.termux/files/usr/bin"
-    
     return sistema
 
 # =============================================================================
@@ -199,20 +187,15 @@ def converter_pdf(caminho_pdf: str, caminho_txt: str) -> bool:
         except FileNotFoundError:
             if sistema['macos']:
                 print("❌ O pdftotext não está instalado no sistema.")
-                print("💡 Para instalar o pdftotext no macOS:")
-                print("   brew install poppler")
+                print("💡 Para instalar o pdftotext no macOS: brew install poppler")
                 return False
             elif sistema['linux']:
                 if sistema['termux']:
                     print("❌ O pdftotext não está instalado no sistema.")
-                    print("💡 Para instalar o pdftotext no Termux:")
-                    print("   pkg install poppler")
+                    print("💡 Para instalar o pdftotext no Termux: pkg install poppler")
                 else:
                     print("❌ O pdftotext não está instalado no sistema.")
-                    print("💡 Para instalar o pdftotext no Linux:")
-                    print("   sudo apt-get install poppler-utils")
-                    print("   sudo pacman -S poppler")
-                    print("   sudo dnf install poppler-utils")
+                    print("💡 Para instalar o pdftotext no Linux: sudo apt-get install poppler-utils")
                 return False
     if sistema['windows'] and pdftotext_path:
         resultado = subprocess.run(
@@ -424,16 +407,13 @@ def verificar_dependencias() -> None:
                 print("     Adicione o diretório bin do Poppler ao PATH do sistema")
         elif sistema['macos']:
             print("❌ O pdftotext não está instalado no sistema.")
-            print("💡 Para instalar o pdftotext no macOS:")
-            print("   - macOS: Execute 'brew install poppler'")
+            print("💡 Para instalar o pdftotext no macOS: brew install poppler")
         elif sistema['termux']:
             print("❌ O pdftotext não está instalado no sistema.")
-            print("💡 Para instalar o pdftotext no Termux:")
-            print("   - Termux: Execute 'pkg install poppler'")
+            print("💡 Para instalar o pdftotext no Termux: pkg install poppler")
         else:
             print("❌ O pdftotext não está instalado no sistema.")
-            print("💡 Para instalar o pdftotext no Linux:")
-            print("   - Linux: Execute 'sudo apt-get install poppler-utils'")
+            print("💡 Para instalar o pdftotext no Linux: sudo apt-get install poppler-utils")
 
 # =============================================================================
 # IMPORTAÇÃO DE MÓDULOS TERCEIRIZADOS
@@ -447,8 +427,7 @@ try:
     from num2words import num2words
     print("✅ num2words importado com sucesso!")
 except ImportError:
-    print("\n❌ Erro ao importar num2words. Tente instalar manualmente:")
-    print("pip install --user num2words")
+    print("\n❌ Erro ao importar num2words. Tente instalar manualmente: pip install --user num2words")
     sys.exit(1)
 
 try:
@@ -456,8 +435,7 @@ try:
     DetectorFactory.seed = 0
     LANG_DETECT_AVAILABLE = True
 except ImportError:
-    print("\n⚠️ O módulo langdetect não está instalado.")
-    print("Para instalar, execute: pip install langdetect")
+    print("\n⚠️ O módulo langdetect não está instalado. Para instalar, execute: pip install langdetect")
     LANG_DETECT_AVAILABLE = False
 
 # =============================================================================
@@ -620,7 +598,8 @@ def exibir_ajuda() -> None:
     input("\nPressione ENTER para voltar ao menu principal...")
 
 async def testar_voz(voz: str) -> None:
-    """Testa uma voz específica com um texto de exemplo e salva a amostra em uma pasta na pasta Download do Android."""
+    """Testa uma voz específica com um texto de exemplo e salva a amostra em uma pasta na pasta Download do Android.
+    Após gerar o teste, retorna automaticamente ao menu principal."""
     texto_teste = "Olá! Esta é uma demonstração da minha voz."
     communicate = edge_tts.Communicate(texto_teste, voz)
     sistema = detectar_sistema()
@@ -645,8 +624,10 @@ async def testar_voz(voz: str) -> None:
         elif sistema['windows']:
             os.startfile(file_path)
         else:
-            subprocess.run(['xdg-open', file_path])
-        await asyncio.sleep(3)
+            # Usa Popen para não travar a execução
+            subprocess.Popen(['xdg-open', file_path])
+        await asyncio.sleep(1)  # Tempo breve para garantir a criação do arquivo
+        # Retorna automaticamente ao menu principal sem esperar por input do usuário.
     except Exception as e:
         print(f"\n❌ Erro ao testar voz: {str(e)}")
 
@@ -881,7 +862,7 @@ async def main() -> None:
                     break
                 print(f"\n🎙️ Testando voz: {voz_escolhida}")
                 await testar_voz(voz_escolhida)
-                input("\nPressione ENTER para continuar...")
+                # Retorna automaticamente ao menu sem aguardar input
         elif opcao == '3':
             exibir_ajuda()
         elif opcao == '4':
