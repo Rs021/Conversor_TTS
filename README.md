@@ -126,15 +126,29 @@ Apenas certifique-se de que o Python 3.6 ou superior está instalado:
 	
    •	🛑 Interrupção segura: Pressione Ctrl+C para interromper e decidir o que fazer com os arquivos gerados
 
-## 🚀 Execução Otimizada
+## 🚀 Recursos e Funcionalidades
 
-   •	📂 Leitura automática de arquivos com detecção de encoding
-	
-   •	🔍 Aviso se o texto não estiver em português
-	
-   •	🔊 Ajuste dinâmico de pausas para melhor entonação
-	
-   •	🏗️ Estrutura modular para fácil personalização
+### 📂 Processamento de Arquivos
+   • Leitura automática de arquivos com detecção inteligente de encoding
+   • Suporte para conversão de PDF para texto
+   • Detecção automática do ambiente (Termux/Desktop)
+
+### 🔍 Otimização de Texto
+   • Verificação automática de idioma português
+   • Conversão inteligente de números e símbolos
+   • Ajuste dinâmico de pausas para melhor entonação
+   • Tratamento especial para abreviações e caracteres especiais
+
+### 💾 Gerenciamento de Progresso
+   • Salvamento automático do progresso de conversão
+   • Capacidade de retomar conversões interrompidas
+   • Opção de manter arquivos parciais ou unificados
+
+### 🎛️ Controle e Personalização
+   • Múltiplas vozes disponíveis em português
+   • Estrutura modular para fácil personalização
+   • Interrupção segura da conversão (Ctrl+C ou 'q')
+   • Opções flexíveis para gerenciamento de arquivos
 
 ## 🔗 Links Úteis
 
