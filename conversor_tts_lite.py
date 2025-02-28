@@ -62,13 +62,9 @@ def pdf_para_txt_pdftotext(caminho_pdf: str, caminho_txt: str) -> bool:
 
 def converter_pdf(caminho_pdf: str, caminho_txt: str) -> bool:
     """
-    Tenta converter PDF para TXT utilizando pdftotext; se falhar, utiliza PyMuPDF.
+    Converte PDF para TXT utilizando pdftotext.
     """
-    if pdf_para_txt_pdftotext(caminho_pdf, caminho_txt):
-        return True
-    else:
-        print("⚠️ pdftotext falhou. Tentando fallback com PyMuPDF...")
-        return pdf_para_txt(caminho_pdf, caminho_txt)
+    return pdf_para_txt_pdftotext(caminho_pdf, caminho_txt)
 
 # =============================================================================
 # FUNÇÕES DE VERIFICAÇÃO DE AMBIENTE E DEPENDÊNCIAS
@@ -136,7 +132,6 @@ def verificar_dependencias() -> None:
         'langdetect': 'langdetect',
         'unidecode': 'unidecode',
         'num2words': 'num2words',
-        'fitz': 'PyMuPDF',  # Adicionando PyMuPDF para conversão de PDF
     }
     for nome_pkg, pip_nome in dependencias_python.items():
         instalar_dependencia_python(nome_pkg, pip_nome)
