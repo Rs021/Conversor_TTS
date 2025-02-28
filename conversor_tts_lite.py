@@ -94,68 +94,44 @@ def detectar_sistema():
 def instalar_poppler_windows():
     """Instala o Poppler no Windows automaticamente."""
     try:
-        # URL do Poppler para Windows (versão 23.11.0)
         poppler_url = "https://github.com/oschwartz10612/poppler-windows/releases/download/v23.11.0-0/Release-23.11.0-0.zip"
-        
-        # Diretório de instalação
         install_dir = os.path.join(os.environ['LOCALAPPDATA'], 'Poppler')
         os.makedirs(install_dir, exist_ok=True)
-        
         print("📥 Baixando Poppler...")
         response = requests.get(poppler_url)
         zip_path = os.path.join(install_dir, "poppler.zip")
-        
-        # Salva o arquivo ZIP
         with open(zip_path, 'wb') as f:
             f.write(response.content)
-        
         print("📦 Extraindo arquivos...")
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            # Extrai todos os arquivos para o diretório de instalação
             zip_ref.extractall(install_dir)
-        
-        # Remove o arquivo ZIP
         os.remove(zip_path)
-        
-        # Procura pelo diretório bin em várias localizações possíveis
         bin_paths = [
             os.path.join(install_dir, 'bin'),
             os.path.join(install_dir, 'Library', 'bin'),
             os.path.join(install_dir, 'poppler-23.11.0', 'bin'),
             os.path.join(install_dir, 'Release-23.11.0-0', 'bin')
         ]
-        
-        # Procura por arquivos .exe para identificar o diretório bin
         bin_path = None
         for path in bin_paths:
             if os.path.exists(path) and any(f.endswith('.exe') for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))):
                 bin_path = path
                 break
-        
-        # Se não encontrou em caminhos predefinidos, procura recursivamente
         if not bin_path:
             for root, dirs, files in os.walk(install_dir):
                 if 'bin' in dirs and any(f.endswith('.exe') for f in os.listdir(os.path.join(root, 'bin')) if os.path.isfile(os.path.join(root, 'bin', f))):
                     bin_path = os.path.join(root, 'bin')
                     break
-        
         if not bin_path:
             print(f"❌ Erro: Diretório bin não encontrado em {install_dir}")
             return False
-        
         print(f"✅ Diretório bin encontrado em: {bin_path}")
-            
-        # Verifica se o pdftotext existe no diretório bin
         pdftotext_path = os.path.join(bin_path, 'pdftotext.exe')
         if not os.path.exists(pdftotext_path):
             print(f"❌ Erro: pdftotext.exe não encontrado em {bin_path}")
             return False
-            
-        # Atualiza o PATH da sessão atual
         if bin_path not in os.environ['PATH']:
             os.environ['PATH'] = f"{bin_path};{os.environ['PATH']}"
-            
-        # Verifica se o pdftotext está funcionando
         try:
             subprocess.run([pdftotext_path, "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
             print("✅ Poppler instalado com sucesso!")
@@ -163,7 +139,6 @@ def instalar_poppler_windows():
         except subprocess.CalledProcessError as e:
             print(f"❌ Erro ao verificar pdftotext: {e}")
             return False
-            
     except Exception as e:
         print(f"❌ Erro ao instalar Poppler: {str(e)}")
         return False
@@ -174,37 +149,40 @@ def instalar_poppler_windows():
 def converter_pdf(caminho_pdf: str, caminho_txt: str) -> bool:
     """Converte PDF para TXT utilizando o comando pdftotext."""
     try:
-        # Verifica se o arquivo PDF existe e é acessível
+        caminho_pdf = os.path.abspath(caminho_pdf)
+        if not os.path.isfile(caminho_pdf):
+            print(f"❌ Arquivo PDF não encontrado: {caminho_pdf}")
+            return False
+        with open(caminho_pdf, 'rb') as _:
+            pass
+    except PermissionError:
+        print(f"❌ Sem permissão para acessar o arquivo: {caminho_pdf}")
+        return False
+    except Exception as e:
+        print(f"❌ Erro ao acessar o arquivo PDF: {str(e)}")
+        return False
+    diretorio_saida = os.path.dirname(caminho_txt)
+    if diretorio_saida and not os.path.exists(diretorio_saida):
         try:
-            caminho_pdf = os.path.abspath(caminho_pdf)
-            if not os.path.isfile(caminho_pdf):
-                print(f"❌ Arquivo PDF não encontrado: {caminho_pdf}")
-                return False
-            # Verifica se o arquivo pode ser lido
-            with open(caminho_pdf, 'rb') as _:
-                pass
-        except PermissionError:
-            print(f"❌ Sem permissão para acessar o arquivo: {caminho_pdf}")
-            return False
+            os.makedirs(diretorio_saida, exist_ok=True)
+            print(f"✅ Diretório de saída criado: {diretorio_saida}")
         except Exception as e:
-            print(f"❌ Erro ao acessar o arquivo PDF: {str(e)}")
+            print(f"❌ Erro ao criar diretório de saída: {str(e)}")
             return False
-            
-        # Verifica se o diretório de saída existe
-        diretorio_saida = os.path.dirname(caminho_txt)
-        if diretorio_saida and not os.path.exists(diretorio_saida):
-            try:
-                os.makedirs(diretorio_saida, exist_ok=True)
-                print(f"✅ Diretório de saída criado: {diretorio_saida}")
-            except Exception as e:
-                print(f"❌ Erro ao criar diretório de saída: {str(e)}")
+    sistema = detectar_sistema()
+    if sistema['windows']:
+        pdftotext_path = None
+        for path in os.environ['PATH'].split(';'):
+            if not path.strip():
+                continue
+            test_path = os.path.join(path.strip(), 'pdftotext.exe')
+            if os.path.exists(test_path) and os.path.isfile(test_path):
+                pdftotext_path = test_path
+                break
+        if not pdftotext_path:
+            print("📦 Poppler não encontrado. Iniciando instalação automática...")
+            if not instalar_poppler_windows():
                 return False
-
-        # Verifica se o pdftotext está instalado
-        sistema = detectar_sistema()
-        if sistema['windows']:
-            # No Windows, procura o pdftotext no PATH
-            pdftotext_path = None
             for path in os.environ['PATH'].split(';'):
                 if not path.strip():
                     continue
@@ -212,69 +190,46 @@ def converter_pdf(caminho_pdf: str, caminho_txt: str) -> bool:
                 if os.path.exists(test_path) and os.path.isfile(test_path):
                     pdftotext_path = test_path
                     break
-                    
             if not pdftotext_path:
-                print("📦 Poppler não encontrado. Iniciando instalação automática...")
-                if not instalar_poppler_windows():
-                    return False
-                # Tenta encontrar o pdftotext novamente após a instalação
-                for path in os.environ['PATH'].split(';'):
-                    if not path.strip():
-                        continue
-                    test_path = os.path.join(path.strip(), 'pdftotext.exe')
-                    if os.path.exists(test_path) and os.path.isfile(test_path):
-                        pdftotext_path = test_path
-                        break
-                        
-                if not pdftotext_path:
-                    print("❌ Não foi possível encontrar o pdftotext mesmo após a instalação")
-                    return False
-        else:
-            # Para outros sistemas, verifica se o pdftotext está disponível
-            try:
-                subprocess.run(["pdftotext", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
-            except FileNotFoundError:
-                if sistema['macos']:
+                print("❌ Não foi possível encontrar o pdftotext mesmo após a instalação")
+                return False
+    else:
+        try:
+            subprocess.run(["pdftotext", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        except FileNotFoundError:
+            if sistema['macos']:
+                print("❌ O pdftotext não está instalado no sistema.")
+                print("💡 Para instalar o pdftotext no macOS:")
+                print("   brew install poppler")
+                return False
+            elif sistema['linux']:
+                if sistema['termux']:
                     print("❌ O pdftotext não está instalado no sistema.")
-                    print("💡 Para instalar o pdftotext no macOS:")
-                    print("   brew install poppler")
-                    return False
-                elif sistema['linux']:
-                    if sistema['termux']:
-                        print("❌ O pdftotext não está instalado no sistema.")
-                        print("💡 Para instalar o pdftotext no Termux:")
-                        print("   pkg install poppler")
-                    else:
-                        print("❌ O pdftotext não está instalado no sistema.")
-                        print("💡 Para instalar o pdftotext no Linux:")
-                        print("   sudo apt-get install poppler-utils  # Para sistemas baseados em Debian/Ubuntu")
-                        print("   sudo pacman -S poppler              # Para sistemas baseados em Arch Linux")
-                        print("   sudo dnf install poppler-utils     # Para sistemas baseados em Fedora")
-                    return False
-
-        # Converte o PDF para TXT usando o caminho completo no Windows
-        if sistema['windows'] and pdftotext_path:
-            resultado = subprocess.run(
-                [pdftotext_path, "-layout", caminho_pdf, caminho_txt],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
-        else:
-            resultado = subprocess.run(
-                ["pdftotext", "-layout", caminho_pdf, caminho_txt],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
-
-        if resultado.returncode != 0:
-            print(f"❌ Erro ao converter o PDF: {resultado.stderr.decode()}")
-            return False
-
-        return True
-
-    except Exception as e:
-        print(f"❌ Erro ao converter o PDF: {str(e)}")
+                    print("💡 Para instalar o pdftotext no Termux:")
+                    print("   pkg install poppler")
+                else:
+                    print("❌ O pdftotext não está instalado no sistema.")
+                    print("💡 Para instalar o pdftotext no Linux:")
+                    print("   sudo apt-get install poppler-utils")
+                    print("   sudo pacman -S poppler")
+                    print("   sudo dnf install poppler-utils")
+                return False
+    if sistema['windows'] and pdftotext_path:
+        resultado = subprocess.run(
+            [pdftotext_path, "-layout", caminho_pdf, caminho_txt],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+    else:
+        resultado = subprocess.run(
+            ["pdftotext", "-layout", caminho_pdf, caminho_txt],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+    if resultado.returncode != 0:
+        print(f"❌ Erro ao converter o PDF: {resultado.stderr.decode()}")
         return False
+    return True
 
 # =============================================================================
 # FUNÇÕES DE VERIFICAÇÃO DE AMBIENTE E DEPENDÊNCIAS
@@ -283,7 +238,6 @@ def verificar_sistema() -> dict:
     """Verifica o sistema operacional e retorna informações sobre ele."""
     print("\n🔍 Verificando ambiente de execução...")
     sistema = detectar_sistema()
-    
     if sistema['termux']:
         print("✅ Executando no Termux (Android)")
     elif sistema['android']:
@@ -296,21 +250,16 @@ def verificar_sistema() -> dict:
         print("✅ Executando no Linux")
     else:
         print("⚠️ Sistema operacional não identificado com precisão")
-    
     return sistema
 
 def instalar_dependencia_termux(pkg: str) -> None:
     """Verifica e instala um pacote do Termux, se necessário."""
     try:
-        # Atualiza o repositório do Termux primeiro
         subprocess.run(['pkg', 'update', '-y'], check=True, capture_output=True)
-        
-        # Verifica se o pacote já está instalado
         resultado = subprocess.run(['pkg', 'list-installed', pkg], capture_output=True, text=True)
         if pkg in resultado.stdout:
             print(f"✅ Pacote Termux {pkg} já está instalado")
             return
-            
         print(f"⚠️ Instalando pacote Termux {pkg}...")
         subprocess.run(['pkg', 'install', '-y', pkg], check=True)
         print(f"✅ Pacote Termux {pkg} instalado com sucesso!")
@@ -420,8 +369,7 @@ def instalar_poppler() -> bool:
                 print("✅ Poppler instalado com sucesso no Windows!")
                 print("⚠️ Você pode precisar reiniciar o terminal para que as alterações no PATH tenham efeito.")
                 try:
-                    subprocess.run([os.path.join(bin_dir, "pdftotext"), "-v"], 
-                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+                    subprocess.run([os.path.join(bin_dir, "pdftotext"), "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
                     return True
                 except (subprocess.CalledProcessError, FileNotFoundError):
                     print("⚠️ Poppler foi instalado, mas o pdftotext ainda não está disponível.")
@@ -559,17 +507,13 @@ def atualizar_script() -> None:
     print("\n🔄 ATUALIZAÇÃO DO SCRIPT")
     print("\nIsso irá baixar a versão mais recente do script do GitHub.")
     confirmar = obter_opcao("Deseja continuar? (s/n): ", ['s', 'n'])
-    
     if confirmar != 's':
         print("\n❌ Atualização cancelada pelo usuário.")
         input("\nPressione ENTER para continuar...")
         return
-    
     print("\n🔄 Baixando a versão mais recente...")
-    
     script_atual = os.path.abspath(__file__)
     script_backup = script_atual + ".backup"
-    
     try:
         shutil.copy2(script_atual, script_backup)
         print(f"✅ Backup criado: {script_backup}")
@@ -577,10 +521,8 @@ def atualizar_script() -> None:
         print(f"⚠️ Não foi possível criar backup: {str(e)}")
         input("\nPressione ENTER para continuar...")
         return
-    
     sistema = detectar_sistema()
     url = "https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/conversor_tts_lite.py"
-    
     try:
         if sistema['windows']:
             try:
@@ -592,28 +534,19 @@ def atualizar_script() -> None:
                 else:
                     raise Exception(f"Erro ao baixar: código {response.status_code}")
             except ImportError:
-                resultado = subprocess.run(
-                    ["curl", "-o", script_atual, url],
-                    capture_output=True, text=True
-                )
+                resultado = subprocess.run(["curl", "-o", script_atual, url], capture_output=True, text=True)
                 if resultado.returncode != 0:
                     raise Exception(f"Erro curl: {resultado.stderr}")
                 print("✅ Script atualizado com sucesso!")
         else:
-            resultado = subprocess.run(
-                ["curl", "-o", script_atual, url],
-                capture_output=True, text=True
-            )
+            resultado = subprocess.run(["curl", "-o", script_atual, url], capture_output=True, text=True)
             if resultado.returncode != 0:
                 raise Exception(f"Erro curl: {resultado.stderr}")
             print("✅ Script atualizado com sucesso!")
-        
         print("\n🔄 O script será reiniciado para aplicar as atualizações.")
         input("Pressione ENTER para continuar...")
-        
         python = sys.executable
         os.execl(python, python, script_atual)
-        
     except Exception as e:
         print(f"\n❌ Erro durante a atualização: {str(e)}")
         print(f"\n🔄 Restaurando backup...")
@@ -623,7 +556,6 @@ def atualizar_script() -> None:
         except Exception as e2:
             print(f"❌ Erro ao restaurar backup: {str(e2)}")
             print(f"⚠️ O backup está disponível em: {script_backup}")
-        
         input("\nPressione ENTER para continuar...")
 
 # =============================================================================
@@ -657,10 +589,8 @@ def menu_vozes() -> str:
     for i, voz in enumerate(VOZES_PT_BR, 1):
         print(f"{i}. {voz}")
     print(f"{len(VOZES_PT_BR) + 1}. Voltar")
-    
     opcoes = [str(i) for i in range(1, len(VOZES_PT_BR) + 2)]
     escolha = obter_opcao("\nEscolha uma voz: ", opcoes)
-    
     if escolha == str(len(VOZES_PT_BR) + 1):
         return None
     return VOZES_PT_BR[int(escolha) - 1]
@@ -693,7 +623,6 @@ async def testar_voz(voz: str) -> None:
     """Testa uma voz específica com um texto de exemplo e salva a amostra em uma pasta na pasta Download do Android."""
     texto_teste = "Olá! Esta é uma demonstração da minha voz."
     communicate = edge_tts.Communicate(texto_teste, voz)
-    
     sistema = detectar_sistema()
     if sistema['android'] or sistema['termux']:
         download_folder = "/storage/emulated/0/Download"
@@ -702,20 +631,22 @@ async def testar_voz(voz: str) -> None:
         file_path = os.path.join(test_folder, f"teste_voz_{voz}.mp3")
     else:
         file_path = "teste_voz.mp3"
-    
     try:
         await communicate.save(file_path)
         print(f"\n✅ Arquivo de teste gerado: {file_path}")
-        
         if sistema['termux']:
-            subprocess.run(['termux-media-player', 'play', file_path])
+            if shutil.which("termux-media-player"):
+                try:
+                    subprocess.run(['termux-media-player', 'play', file_path], timeout=10)
+                except subprocess.TimeoutExpired:
+                    print("Aviso: reprodução de áudio demorou, continuando...")
+            else:
+                print("Termux-media-player não disponível, não reproduzindo áudio.")
         elif sistema['windows']:
             os.startfile(file_path)
         else:
             subprocess.run(['xdg-open', file_path])
-            
         await asyncio.sleep(3)
-        # O arquivo não é removido para que o usuário possa acessar a amostra posteriormente.
     except Exception as e:
         print(f"\n❌ Erro ao testar voz: {str(e)}")
 
@@ -744,27 +675,22 @@ def selecionar_arquivo() -> str:
         dir_atual = os.path.join(os.path.expanduser('~'), 'Desktop')
     else:
         dir_atual = os.path.join(os.path.expanduser('~'), 'Desktop')
-    
     while True:
         exibir_banner()
         print("\n📂 SELEÇÃO DE ARQUIVO")
         print(f"\nDiretório atual: {dir_atual}")
         print("\nArquivos disponíveis:")
-        
         arquivos = listar_arquivos(dir_atual)
         if not arquivos:
             print("\n⚠️ Nenhum arquivo TXT ou PDF encontrado neste diretório")
         else:
             for i, arquivo in enumerate(arquivos, 1):
                 print(f"{i}. {arquivo}")
-        
         print("\nOpções:")
         print("D. Mudar diretório")
         print("M. Digitar caminho manualmente")
         print("V. Voltar ao menu principal")
-        
         escolha = input("\nEscolha uma opção: ").strip().upper()
-        
         if escolha == 'V':
             return ''
         elif escolha == 'D':
