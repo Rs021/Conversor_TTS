@@ -90,7 +90,6 @@ def verificar_dependencias() -> None:
         'langdetect': 'langdetect',
         'unidecode': 'unidecode',
         'num2words': 'num2words'
-        # Removido googletrans para evitar atrasos
     }
     for nome_pkg, pip_nome in dependencias_python.items():
         instalar_dependencia_python(nome_pkg, pip_nome)
@@ -106,7 +105,6 @@ import edge_tts
 from unidecode import unidecode
 import chardet
 
-# Importa num2words
 try:
     from num2words import num2words
     print("✅ num2words importado com sucesso!")
@@ -115,7 +113,6 @@ except ImportError:
     print("pip install --user num2words")
     sys.exit(1)
 
-# Importa langdetect e configura semente
 try:
     from langdetect import detect, DetectorFactory
     DetectorFactory.seed = 0
@@ -158,9 +155,9 @@ def ler_progresso(arquivo_progresso: str) -> int:
 def limpar_nome_arquivo(nome: str) -> str:
     """
     Remove ou substitui caracteres inválidos em sistemas de arquivos,
-    como : / \ * ? " < > | etc. 
+    como : /  * ? " < > | etc. 
     """
-    caracteres_invalidos = r'\/:*?"<>|'
+    caracteres_invalidos = r'/:*?"<>|'
     for c in caracteres_invalidos:
         nome = nome.replace(c, '-')
     return nome.strip()
@@ -229,34 +226,27 @@ def otimizar_texto_tts(texto: str) -> str:
       - Substitui palavras e símbolos problemáticos.
       - Ajusta pausas na pontuação.
     """
-    # Limpeza de caracteres que podem causar erros no TTS
     caracteres_problematicos = {
         "©": " copyright ",
         "®": " marca registrada ",
-        "–": "-",    # travessão curto
-        "—": "-",    # travessão longo
+        "–": "-",
+        "—": "-",
         "“": '"',
         "”": '"',
         "‘": "'",
         "’": "'",
-        "\ufeff": "",  # BOM
+        "ufeff": "",
         "…": "..."
     }
     for chave, valor in caracteres_problematicos.items():
         texto = texto.replace(chave, valor)
-
-    # Converter capítulos e títulos com algarismos romanos
     texto = re.sub(r'(CAPÍTULO|Capítulo|TÍTULO|Título|Parte|PARTE|Livro|LIVRO)\s+([IVXLCDM]+)',
                    lambda m: f"{m.group(1)} {romano_para_decimal(m.group(2))}",
                    texto)
-    # Converter números ordinais para texto
     texto = re.sub(r'(\d+)([ºª])', converter_ordinal, texto)
-    # Converter números romanos isolados
     texto = re.sub(r'\b([IVXLCDM]+)\b',
                    lambda m: str(romano_para_decimal(m.group(1))),
                    texto)
-
-    # Dicionário de substituições para otimização de pronúncia
     substituicoes = {
         'más': 'mas', 'pôr': 'por', 'têm': 'tem',
         'à': 'a', 'às': 'as', 'é': 'eh',
@@ -270,23 +260,15 @@ def otimizar_texto_tts(texto: str) -> str:
         'vc': 'você', 'tb': 'também',
         'q': 'que', 'td': 'tudo'
     }
-    # Aplicar substituições
     texto = texto.lower()
     for original, corrigida in substituicoes.items():
         texto = re.sub(rf'\b{original}\b', corrigida, texto, flags=re.IGNORECASE)
-
-    # Converter algarismos para extenso
     texto = re.sub(r'\d+', lambda m: num2words(int(m.group()), lang='pt_BR'), texto)
-
-    # Ajustar pausas e pontuação
     pontuacoes = {'.': '. ', ',': ', ', ';': '; ', ':': ': ', '!': '! ', '?': '? ', '...': '... '}
     for sinal, substituicao in pontuacoes.items():
         texto = texto.replace(sinal, substituicao)
     texto = re.sub(r'\.{3,}', '... ', texto)
     texto = re.sub(r'\s+', ' ', texto)
-    texto = re.sub(r'\s+([.,!?;:])', r'\1', texto)
-    texto = re.sub(r'([.,!?;:])(?=\S)', r'\1 ', texto)
-    
     return texto.strip()
 
 # =============================================================================
@@ -316,7 +298,6 @@ async def tratar_interrupcao(temp_files: list, arquivo_saida: str) -> bool:
     print("[2] Unificar arquivos convertidos")
     print("[3] Excluir arquivos convertidos")
     opcao = obter_opcao("\n🔹 Sua escolha ([1/2/3]): ", ['1', '2', '3'])
-
     if opcao == '1':
         print("\n✅ Arquivos parciais mantidos separadamente.")
     elif opcao == '2':
@@ -332,10 +313,10 @@ async def tratar_interrupcao(temp_files: list, arquivo_saida: str) -> bool:
                                     break
                                 outfile.write(chunk)
                         os.remove(temp_file)
-                        print(f"🗑️ Arquivo temporário removido: {temp_file}")
+                        print(f"\n🗑️ Arquivo temporário removido: {temp_file}")
             print("✅ Arquivos unificados com sucesso!")
         except Exception as e:
-            print(f"⚠️ Erro ao unificar arquivos: {e}")
+            print(f"\n⚠️ Erro ao unificar arquivos: {e}")
     else:
         print("\n🗑️ Excluindo arquivos convertidos...")
         for temp_file in temp_files:
@@ -343,10 +324,8 @@ async def tratar_interrupcao(temp_files: list, arquivo_saida: str) -> bool:
                 if os.path.exists(temp_file):
                     os.remove(temp_file)
             except Exception as e:
-                print(f"⚠️ Erro ao excluir {temp_file}: {e}")
+                print(f"\n⚠️ Erro ao excluir {temp_file}: {e}")
         print("✅ Arquivos excluídos com sucesso!")
-
-    # Gerenciar arquivo de progresso
     arquivo_progresso = f"{arquivo_saida}.progress"
     if os.path.exists(arquivo_progresso):
         print("\n💾 Deseja manter o registro de progresso para retomar a conversão posteriormente?")
@@ -356,7 +335,7 @@ async def tratar_interrupcao(temp_files: list, arquivo_saida: str) -> bool:
                 os.remove(arquivo_progresso)
                 print("✅ Registro de progresso apagado com sucesso!")
             except Exception as e:
-                print(f"⚠️ Erro ao apagar registro de progresso: {e}")
+                print(f"\n⚠️ Erro ao apagar registro de progresso: {e}")
         else:
             print("✅ Registro de progresso mantido para continuação posterior.")
     limpar_tela()
@@ -369,55 +348,38 @@ async def processar_audio(texto: str, arquivo_saida: str, voz: str, chunk_size: 
     unifica os arquivos ao final.
     """
     temp_files = []
-    # Define nome base a partir da primeira linha do texto
     primeira_linha = texto.strip().split('\n')[0].strip()
     if primeira_linha:
-        # Limpa caracteres proibidos no nome do arquivo
         linha_limpa = limpar_nome_arquivo(primeira_linha)
         nome_base = Path(arquivo_saida).parent / linha_limpa
         arquivo_saida = f"{nome_base}.mp3"
-
-    # Escolha de unificação de arquivos
     print("\n📦 Preferência de arquivos:")
     print("[Enter/N] Unificar arquivos e excluir partes (padrão)")
     print("[S] Manter arquivos separados")
     opcao = input("\n🔹 Sua escolha: ").strip().upper()
     manter_separado = (opcao == 'S')
-
-    # Validação do idioma do texto
     if not validar_texto_pt_br(texto):
         print("\n🛑 Conversão cancelada pelo usuário.")
         return False
-
-    # Otimiza o texto para TTS (já com limpeza dos caracteres problemáticos)
     texto = otimizar_texto_tts(texto)
-
-    # Reseta flag de interrupção
     global interrupcao_requisitada
     interrupcao_requisitada = False
-
-    # Determina o tamanho dos chunks de forma adaptativa
     chunk_size = max(2000, min(len(texto) // 10, 5000))
     partes = [texto[i:i + chunk_size] for i in range(0, len(texto), chunk_size)]
     total_partes = len(partes)
     print(f"\n🔄 Processando {total_partes} partes...")
     print("\nPressione Ctrl+C para interromper a conversão a qualquer momento.")
-
-    # Gerencia progresso, se existir
     arquivo_progresso = f"{arquivo_saida}.progress"
     indice_inicial = ler_progresso(arquivo_progresso)
     if indice_inicial > 0:
         print(f"\n📝 Retomando a partir da parte {indice_inicial + 1}")
-
     for i, parte in enumerate(partes[indice_inicial:], start=indice_inicial + 1):
         if interrupcao_requisitada:
             gravar_progresso(arquivo_progresso, i - 1)
             await tratar_interrupcao(temp_files, arquivo_saida)
             limpar_tela()
             return False
-
         print(f"\r📊 Progresso: {i}/{total_partes} ({int(i / total_partes * 100)}%) " + "=" * (i * 20 // total_partes) + ">", end="")
-
         max_tentativas = 5
         for tentativa in range(1, max_tentativas + 1):
             try:
@@ -435,8 +397,6 @@ async def processar_audio(texto: str, arquivo_saida: str, voz: str, chunk_size: 
                 else:
                     print(f"\n⚠️ Erro ao processar parte {i} após {max_tentativas} tentativas: {e}")
                     continue
-
-    # Combina os arquivos caso o usuário não deseje mantê-los separados
     if not interrupcao_requisitada:
         if not manter_separado:
             print("\n📦 Combinando arquivos...")
@@ -468,25 +428,22 @@ def ler_arquivo(caminho: str) -> str:
             conteudo_bruto = f.read()
             resultado = chardet.detect(conteudo_bruto)
             encoding_detectado = resultado.get('encoding')
-
-            if encoding_detectado is None and b'\x00' in conteudo_bruto:
-                # Força UTF-16 LE se encontrar alta presença de bytes nulos (característica de UTF-16)
+            if encoding_detectado is None and b'x00' in conteudo_bruto:
                 encoding_detectado = 'utf-16-le'
-
             if encoding_detectado:
                 return conteudo_bruto.decode(encoding_detectado)
-
     except Exception as e:
         print(f"❌ Erro ao ler o arquivo: {e}")
-
     print(f"❌ Não foi possível ler o arquivo {caminho}. Verifique o encoding.")
     return None
 
-
-def atualizar_script():
+# =============================================================================
+# FUNÇÕES DE ATUALIZAÇÃO
+# =============================================================================
+def atualizar_script(finalizar_apos=False):
     """
     Atualiza o script baixando a versão mais recente diretamente do GitHub.
-    Sobrescreve o arquivo atual e oferece opção de reiniciar automaticamente.
+    Sobrescreve o arquivo atual e oferece opção de reiniciar automaticamente ou encerrar.
     """
     import shutil
 
@@ -515,177 +472,114 @@ def atualizar_script():
         print(f"❌ Erro ao substituir o arquivo: {e}")
         return
 
-    opcao = input("\n🔄 Deseja reiniciar o script agora? (S/N): ").strip().lower()
-    if opcao == 's':
-        print("🔄 Reiniciando...")
-        os.execv(sys.executable, [sys.executable] + sys.argv)
-
-
-
-def exibir_menu() -> str:
-    print("\n" + "=" * 60)
-    print("""
-    ████████╗████████╗███████╗
-    ╚══██╔══╝╚══██╔══╝██╔════╝
-       ██║      ██║   ███████╗
-       ██║      ██║   ╚════██║
-       ██║      ██║   ███████║
-       ╚═╝      ╚═╝   ╚══════╝
-    """)
-    print("=" * 60)
-    print("\n\033[1;36;1m🎯 MENU PRINCIPAL\033[0m")
-    print("-" * 50)
-    print("\n\033[1;32;1m[1] 🚀 INICIAR")
-    print("\033[1;34;1m[2] 🎙️ VOZES")
-    print("\033[1;33;1m[3] ❓ AJUDA")
-    print("\033[1;35;1m[4] 🔄 ATUALIZAR SCRIPT")
-    print("\033[1;31;1m[5] 🚪 SAIR\033[0m")
-    print("-" * 50)
-    return obter_opcao("\n\033[1;36;1m🔹 Escolha: \033[0m", ['1', '2', '3', '4', '5'])
-
-
-
-async def main() -> None:
-    while True:
-        opcao = exibir_menu()
-        if opcao == '1':
-            await converter_audio()
-        elif opcao == '2':
-            await testar_vozes()
-        elif opcao == '3':
-            exibir_ajuda()
-        elif opcao == '4':
-            atualizar_script()
-        elif opcao == '5':
-            print("\n👋 Obrigado por usar o Conversor TTS Lite!")
-            break
+    if finalizar_apos:
+        print("\n✅ Script atualizado e encerrado. Execute novamente para carregar a nova versão.")
+        sys.exit(0)
+    else:
+        opcao = input("\n🔄 Deseja reiniciar o script agora? (S/N): ").strip().lower()
+        if opcao == 's':
+            print("🔄 Reiniciando...")
+            os.execv(sys.executable, [sys.executable] + sys.argv)
 
 # =============================================================================
 # INTERFACE DO USUÁRIO (CLI)
 # =============================================================================
 def exibir_menu() -> str:
-    """Exibe o menu principal e retorna a opção escolhida."""
     print("\n" + "=" * 60)
-    print("""
-    ████████╗████████╗███████╗
-    ╚══██╔══╝╚══██╔══╝██╔════╝
-       ██║      ██║   ███████╗
-       ██║      ██║   ╚════██║
-       ██║      ██║   ███████║
-       ╚═╝      ╚═╝   ╚══════╝
-    """)
+    print("""\
+████████╗████████╗███████╗
+╚══██╔══╝╚══██╔══╝██╔════╝
+   ██║      ██║   ███████╗
+   ██║      ██║   ╚════██║
+   ██║      ██║   ███████║
+   ╚═╝      ╚═╝   ╚══════╝
+""")
     print("=" * 60)
-    print("\n\033[1;36;1m🎯 MENU PRINCIPAL\033[0m")
+    print("\n[1] 🚀 Iniciar Conversão")
+    print("[2] 🎙️ Testar Vozes")
+    print("[3] ❓ Ajuda")
+    print("[4] 🔄 Atualizar Script")
+    print("[5] 🔄 Atualizar e Sair")
+    print("[6] 🚪 Sair")
     print("-" * 50)
-    print("\n\033[1;32;1m[1] 🚀 INICIAR")
-    print("\033[1;34;1m[2] 🎙️ VOZES")
-    print("\033[1;33;1m[3] ❓ AJUDA")
-    print("\033[1;31;1m[4] 🚪 SAIR\033[0m")
-    print("-" * 50)
-    return obter_opcao("\n\033[1;36;1m🔹 Escolha: \033[0m", ['1', '2', '3', '4'])
+    return obter_opcao("\nEscolha: ", ['1', '2', '3', '4', '5', '6'])
 
 def exibir_ajuda() -> None:
-    """Exibe o guia de uso do conversor TTS."""
     print("\n" + "-" * 50)
-    print("\033[1;36;1m📚 GUIA DO CONVERSOR TTS\033[0m")
+    print("📚 GUIA DO CONVERSOR TTS")
     print("-" * 50)
-    print("\n\033[1;33;1m1️⃣ PREPARAÇÃO")
-    print("\033[1;37;1m• Salve seu texto em um arquivo .txt")
-    print("\033[1;37;1m• Coloque-o na pasta Downloads")
-    
-    print("\n\033[1;33;1m2️⃣ CONVERSÃO")
-    print("\033[1;37;1m• Selecione 'Iniciar'")
-    print("\033[1;37;1m• Escolha o arquivo desejado")
-    print("\033[1;37;1m• Selecione a voz")
-    
-    print("\n\033[1;33;1m3️⃣ RECURSOS")
-    print("\033[1;37;1m• Conversão de números para texto")
-    print("\033[1;37;1m• Otimizações para o português")
-    print("\033[1;37;1m• Processamento de textos longos")
-    print("\033[1;37;1m• Detecção de idioma (para avisar se não for PT-BR)")
-    
-    print("\n\033[1;33;1m4️⃣ DICAS")
-    print("\033[1;37;1m• Teste diferentes vozes")
-    print("\033[1;37;1m• Use Ctrl+C para interromper a conversão")
-    print("\033[1;37;1m• O áudio será salvo na pasta Downloads")
-    
-    input("\n\033[1;36;1m🔹 Pressione Enter para voltar...\033[0m")
+    print("\n1️⃣ PREPARAÇÃO")
+    print("• Salve seu texto em um arquivo .txt")
+    print("• Coloque-o na pasta Downloads")
+    print("\n2️⃣ CONVERSÃO")
+    print("• Selecione 'Iniciar'")
+    print("• Escolha o arquivo desejado")
+    print("• Selecione a voz")
+    print("\n3️⃣ RECURSOS")
+    print("• Conversão de números para texto")
+    print("• Otimizações para o português")
+    print("• Processamento de textos longos")
+    print("• Detecção de idioma (para avisar se não for PT-BR)")
+    print("\n4️⃣ DICAS")
+    print("• Teste diferentes vozes")
+    print("• Use Ctrl+C para interromper a conversão")
+    print("• O áudio será salvo na pasta Downloads")
+    input("\nPressione Enter para voltar...")
     limpar_tela()
 
 def escolher_voz() -> str:
-    """Exibe as opções de voz e retorna a voz escolhida."""
     print("\n" + "-" * 50)
-    print("\033[1;36;1m🎙️ ESCOLHA A VOZ PARA A CONVERSÃO\033[0m")
-    print("\n\033[1;33;1m⭐ A voz padrão é 'Thalita' - otimizada para múltiplos idiomas\033[0m")
+    print("🎙️ ESCOLHA A VOZ PARA A CONVERSÃO")
+    print("\n⭐ A voz padrão é 'Thalita' - otimizada para múltiplos idiomas")
     for indice, voz in enumerate(VOZES_PT_BR, start=1):
         detalhe = " (Voz padrão)" if indice == 1 else ""
-        print(f"\033[1;32;1m  [{indice}] {voz}{detalhe}\033[0m")
-    escolha = input("\n\033[1;36;1m🔹 Digite o número da voz desejada: \033[0m").strip()
+        print(f"  [{indice}] {voz}{detalhe}")
+    escolha = input("\nDigite o número da voz desejada: ").strip()
     while not (escolha.isdigit() and 1 <= int(escolha) <= len(VOZES_PT_BR)):
-        print("\033[1;31;1m⚠️ Opção inválida! Escolha um número da lista.\033[0m")
-        escolha = input("\n\033[1;36;1m🔹 Digite o número da voz desejada: \033[0m").strip()
+        print("⚠️ Opção inválida! Escolha um número da lista.")
+        escolha = input("\nDigite o número da voz desejada: ").strip()
     return VOZES_PT_BR[int(escolha) - 1]
 
-# =============================================================================
-# FUNÇÕES PRINCIPAIS DE CONVERSÃO E TESTES
-# =============================================================================
 async def converter_audio() -> None:
-    """
-    Função principal para converter um arquivo de texto em áudio.
-    Lê o arquivo, permite a escolha de voz, processa o texto e gera o áudio.
-    """
     limpar_tela()
-    print("\n📖 Conversor de Texto para Fala - Modo Leve\n")
-
-    # Determina o diretório padrão de arquivos TXT
+    print("\n📖 Conversor de Texto para Fala - Modo Leve")
     diretorio_padrao = "/storage/emulated/0/Download"
     if not os.path.exists(diretorio_padrao):
         diretorio_padrao = os.path.expanduser("~/storage/downloads")
         if not os.path.exists(diretorio_padrao):
             diretorio_padrao = os.path.expanduser("~")
-
     if not os.path.exists(diretorio_padrao):
         print(f"⚠️ Diretório não encontrado: {diretorio_padrao}")
         print("ℹ️ Dica: Verifique se o Termux tem permissão de acesso ao armazenamento (termux-setup-storage).")
         return
-
-    # Lista arquivos TXT disponíveis
     arquivos_txt = [f for f in os.listdir(diretorio_padrao) if f.endswith('.txt')]
     if not arquivos_txt:
         print("⚠️ Nenhum arquivo TXT encontrado no diretório de downloads!")
         return
-
     print("📄 Arquivos TXT disponíveis:")
     for indice, arquivo in enumerate(arquivos_txt, start=1):
         print(f"[{indice}] {arquivo}")
-
-    opcao = input("\n🔹 Digite o número do arquivo desejado: ").strip()
+    opcao = input("\nDigite o número do arquivo desejado: ").strip()
     while not (opcao.isdigit() and 1 <= int(opcao) <= len(arquivos_txt)):
         print("⚠️ Opção inválida! Escolha um número da lista.")
-        opcao = input("\n🔹 Digite o número do arquivo desejado: ").strip()
+        opcao = input("\nDigite o número do arquivo desejado: ").strip()
     arquivo_selecionado = arquivos_txt[int(opcao) - 1]
-
     caminho_completo = os.path.join(diretorio_padrao, arquivo_selecionado)
     print(f"\n📄 Lendo arquivo: {arquivo_selecionado}")
     texto = ler_arquivo(caminho_completo)
     if not texto:
         return
-
     voz = escolher_voz()
     nome_base = Path(caminho_completo).stem
     diretorio_saida = os.path.join(diretorio_padrao, f"{nome_base}_audio")
     os.makedirs(diretorio_saida, exist_ok=True)
     arquivo_saida = os.path.join(diretorio_saida, f"{nome_base}.mp3")
-
     await processar_audio(texto, arquivo_saida, voz)
     print(f"\n📂 Arquivos salvos em: {diretorio_saida}")
-    input("\n🔹 Pressione Enter para voltar ao menu...")
+    input("\nPressione Enter para voltar ao menu...")
     limpar_tela()
 
 async def testar_vozes() -> None:
-    """
-    Gera arquivos de teste para cada voz disponível, salvando-os em um diretório de testes.
-    """
     limpar_tela()
     print("\n🔊 Gerando arquivos de teste para cada voz...\n")
     diretorio_testes = "vozes_teste"
@@ -699,13 +593,10 @@ async def testar_vozes() -> None:
         print(f"✅ Arquivo salvo: {arquivo_mp3}")
     print("\n✅ Testes concluídos!")
     print(f"📂 Arquivos salvos em: {diretorio_testes}")
-    input("\n🔹 Pressione Enter para voltar ao menu...")
+    input("\nPressione Enter para voltar ao menu...")
     limpar_tela()
 
-#async def main() -> None:
-    """
-    Função principal que exibe o menu e direciona para as funções correspondentes.
-    """
+async def main():
     while True:
         opcao = exibir_menu()
         if opcao == '1':
@@ -715,6 +606,10 @@ async def testar_vozes() -> None:
         elif opcao == '3':
             exibir_ajuda()
         elif opcao == '4':
+            atualizar_script()
+        elif opcao == '5':
+            atualizar_script(finalizar_apos=True)
+        elif opcao == '6':
             print("\n👋 Obrigado por usar o Conversor TTS Lite!")
             break
 
