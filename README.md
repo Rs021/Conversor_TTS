@@ -34,6 +34,8 @@ Para utilizar este conversor de texto para fala no Android, você precisará ins
    apt update && apt upgrade -y  # Atualiza os pacotes do Termux
    
    apt install python git -y  # Instala Python e Git
+```
+## Caso durante a instalação pergunte algo, basta digitar y.
 
 ### 🔵 Linux
 
