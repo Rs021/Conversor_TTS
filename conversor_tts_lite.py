@@ -29,25 +29,7 @@ interrupcao_requisitada = False
 # =============================================================================
 # FUNÇÕES PARA CONVERSÃO DE PDF
 # =============================================================================
-def pdf_para_txt(caminho_pdf: str, caminho_txt: str) -> bool:
-    """
-    Converte PDF para TXT utilizando PyMuPDF.
-    """
-    try:
-        import fitz  # PyMuPDF
-        with fitz.open(caminho_pdf) as doc:
-            texto = ""
-            for pagina in doc:
-                texto += pagina.get_text()
-        with open(caminho_txt, 'w', encoding='utf-8') as arquivo_txt:
-            arquivo_txt.write(texto)
-        print(f"✅ PDF convertido para TXT via PyMuPDF: {caminho_txt}")
-        return True
-    except Exception as e:
-        print(f"❌ Erro ao converter PDF para TXT (PyMuPDF): {e}")
-        return False
-
-def pdf_para_txt_pdftotext(caminho_pdf: str, caminho_txt: str) -> bool:
+def converter_pdf(caminho_pdf: str, caminho_txt: str) -> bool:
     """
     Converte PDF para TXT utilizando o comando pdftotext.
     """
@@ -59,12 +41,6 @@ def pdf_para_txt_pdftotext(caminho_pdf: str, caminho_txt: str) -> bool:
     except Exception as e:
         print(f"❌ Erro ao converter PDF com pdftotext: {e}")
         return False
-
-def converter_pdf(caminho_pdf: str, caminho_txt: str) -> bool:
-    """
-    Converte PDF para TXT utilizando pdftotext.
-    """
-    return pdf_para_txt_pdftotext(caminho_pdf, caminho_txt)
 
 # =============================================================================
 # FUNÇÕES DE VERIFICAÇÃO DE AMBIENTE E DEPENDÊNCIAS
