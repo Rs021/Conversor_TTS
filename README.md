@@ -35,7 +35,7 @@ Para utilizar este conversor de texto para fala no Android, você precisará ins
    
    apt install python git -y  # Instala Python e Git
 ```
-## Caso durante a instalação pergunte algo, basta digitar y.
+### Caso durante a instalação pergunte algo, basta digitar y.
 
 ### 🔵 Linux
 
@@ -59,7 +59,7 @@ Apenas certifique-se de que o Python 3.6 ou superior está instalado:
 ```bash
    ls
 ```
-   #### ✅ Se aparecer a mensagem ### conversor_tts_lite.py #### o aquivo foi baixado!
+   #### ✅ Se aparecer a mensagem conversor_tts_lite.py o aquivo foi baixado!
    #### ❌ Se o nome conversor_tts_lite.py não aparecer, refaça o passo 1!
 
 ### 3. Instale as dependências necessárias: 
