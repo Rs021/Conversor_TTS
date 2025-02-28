@@ -7,6 +7,10 @@ import re
 import signal
 from pathlib import Path
 import select
+import platform
+import requests
+import zipfile
+import shutil
 
 # =============================================================================
 # CONFIGURAÇÃO E CONSTANTES
@@ -27,103 +31,503 @@ BUFFER_IO = 32768
 interrupcao_requisitada = False
 
 # =============================================================================
+# FUNÇÕES PARA DETECÇÃO DE SISTEMA OPERACIONAL
+# =============================================================================
+def detectar_sistema():
+    """Detecta o sistema operacional e ambiente de execução."""
+    sistema = {
+        'nome': platform.system().lower(),
+        'termux': False,
+        'android': False,
+        'windows': False,
+        'linux': False,
+        'macos': False,
+    }
+    
+    # Detecta Windows
+    if sistema['nome'] == 'windows':
+        sistema['windows'] = True
+        return sistema
+    
+    # Detecta macOS
+    if sistema['nome'] == 'darwin':
+        sistema['macos'] = True
+        return sistema
+    
+    # Detecta Linux (incluindo Android/Termux)
+    if sistema['nome'] == 'linux':
+        sistema['linux'] = True
+        
+        # Verifica se é Android/Termux
+        is_android = any([
+            'ANDROID_ROOT' in os.environ,
+            'TERMUX_VERSION' in os.environ,
+            os.path.exists('/data/data/com.termux'),
+            os.path.exists('/system/bin/linker64')  # Comum em Android
+        ])
+        
+        if is_android:
+            sistema['android'] = True
+            # Verifica especificamente se é Termux
+            if any([
+                'TERMUX_VERSION' in os.environ,
+                os.path.exists('/data/data/com.termux')
+            ]):
+                sistema['termux'] = True
+                # Configura variáveis de ambiente específicas do Termux
+                os.environ['PATH'] = f"{os.environ.get('PATH', '')}:/data/data/com.termux/files/usr/bin"
+    
+    return sistema
+
+# =============================================================================
+# FUNÇÕES PARA INSTALAÇÃO DO POPPLER
+# =============================================================================
+def instalar_poppler_windows():
+    """Instala o Poppler no Windows automaticamente."""
+    try:
+        # URL do Poppler para Windows (versão 23.11.0)
+        poppler_url = "https://github.com/oschwartz10612/poppler-windows/releases/download/v23.11.0-0/Release-23.11.0-0.zip"
+        
+        # Diretório de instalação
+        install_dir = os.path.join(os.environ['LOCALAPPDATA'], 'Poppler')
+        os.makedirs(install_dir, exist_ok=True)
+        
+        print("📥 Baixando Poppler...")
+        response = requests.get(poppler_url)
+        zip_path = os.path.join(install_dir, "poppler.zip")
+        
+        # Salva o arquivo ZIP
+        with open(zip_path, 'wb') as f:
+            f.write(response.content)
+        
+        print("📦 Extraindo arquivos...")
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            # Extrai todos os arquivos para o diretório de instalação
+            zip_ref.extractall(install_dir)
+        
+        # Remove o arquivo ZIP
+        os.remove(zip_path)
+        
+        # Procura pelo diretório bin em várias localizações possíveis
+        bin_paths = [
+            os.path.join(install_dir, 'bin'),
+            os.path.join(install_dir, 'Library', 'bin'),
+            os.path.join(install_dir, 'poppler-23.11.0', 'bin'),
+            os.path.join(install_dir, 'Release-23.11.0-0', 'bin')
+        ]
+        
+        # Procura por arquivos .exe para identificar o diretório bin
+        bin_path = None
+        for path in bin_paths:
+            if os.path.exists(path) and any(f.endswith('.exe') for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))):
+                bin_path = path
+                break
+        
+        # Se não encontrou em caminhos predefinidos, procura recursivamente
+        if not bin_path:
+            for root, dirs, files in os.walk(install_dir):
+                if 'bin' in dirs and any(f.endswith('.exe') for f in os.listdir(os.path.join(root, 'bin')) if os.path.isfile(os.path.join(root, 'bin', f))):
+                    bin_path = os.path.join(root, 'bin')
+                    break
+        
+        if not bin_path:
+            print(f"❌ Erro: Diretório bin não encontrado em {install_dir}")
+            return False
+        
+        print(f"✅ Diretório bin encontrado em: {bin_path}")
+            
+        # Verifica se o pdftotext existe no diretório bin
+        pdftotext_path = os.path.join(bin_path, 'pdftotext.exe')
+        if not os.path.exists(pdftotext_path):
+            print(f"❌ Erro: pdftotext.exe não encontrado em {bin_path}")
+            return False
+            
+        # Atualiza o PATH da sessão atual
+        if bin_path not in os.environ['PATH']:
+            os.environ['PATH'] = f"{bin_path};{os.environ['PATH']}"
+            
+        # Verifica se o pdftotext está funcionando
+        try:
+            subprocess.run([pdftotext_path, "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+            print("✅ Poppler instalado com sucesso!")
+            return True
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Erro ao verificar pdftotext: {e}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Erro ao instalar Poppler: {str(e)}")
+        return False
+
+# =============================================================================
 # FUNÇÕES PARA CONVERSÃO DE PDF
 # =============================================================================
 def converter_pdf(caminho_pdf: str, caminho_txt: str) -> bool:
-    """
-    Converte PDF para TXT utilizando o comando pdftotext.
-    """
+    """Converte PDF para TXT utilizando o comando pdftotext."""
     try:
-        comando = ["pdftotext", "-layout", caminho_pdf, caminho_txt]
-        subprocess.run(comando, check=True)
-        print(f"✅ PDF convertido para TXT com pdftotext: {caminho_txt}")
+        # Verifica se o arquivo PDF existe e é acessível
+        try:
+            caminho_pdf = os.path.abspath(caminho_pdf)
+            if not os.path.isfile(caminho_pdf):
+                print(f"❌ Arquivo PDF não encontrado: {caminho_pdf}")
+                return False
+            # Verifica se o arquivo pode ser lido
+            with open(caminho_pdf, 'rb') as _:
+                pass
+        except PermissionError:
+            print(f"❌ Sem permissão para acessar o arquivo: {caminho_pdf}")
+            return False
+        except Exception as e:
+            print(f"❌ Erro ao acessar o arquivo PDF: {str(e)}")
+            return False
+            
+        # Verifica se o diretório de saída existe
+        diretorio_saida = os.path.dirname(caminho_txt)
+        if diretorio_saida and not os.path.exists(diretorio_saida):
+            try:
+                os.makedirs(diretorio_saida, exist_ok=True)
+                print(f"✅ Diretório de saída criado: {diretorio_saida}")
+            except Exception as e:
+                print(f"❌ Erro ao criar diretório de saída: {str(e)}")
+                return False
+
+        # Verifica se o pdftotext está instalado
+        sistema = detectar_sistema()
+        if sistema['windows']:
+            # No Windows, procura o pdftotext no PATH
+            pdftotext_path = None
+            for path in os.environ['PATH'].split(';'):
+                if not path.strip():
+                    continue
+                test_path = os.path.join(path.strip(), 'pdftotext.exe')
+                if os.path.exists(test_path) and os.path.isfile(test_path):
+                    pdftotext_path = test_path
+                    break
+                    
+            if not pdftotext_path:
+                print("📦 Poppler não encontrado. Iniciando instalação automática...")
+                if not instalar_poppler_windows():
+                    return False
+                # Tenta encontrar o pdftotext novamente após a instalação
+                for path in os.environ['PATH'].split(';'):
+                    if not path.strip():
+                        continue
+                    test_path = os.path.join(path.strip(), 'pdftotext.exe')
+                    if os.path.exists(test_path) and os.path.isfile(test_path):
+                        pdftotext_path = test_path
+                        break
+                        
+                if not pdftotext_path:
+                    print("❌ Não foi possível encontrar o pdftotext mesmo após a instalação")
+                    return False
+        else:
+            # Para outros sistemas, verifica se o pdftotext está disponível
+            try:
+                subprocess.run(["pdftotext", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+            except FileNotFoundError:
+                if sistema['macos']:
+                    print("❌ O pdftotext não está instalado no sistema.")
+                    print("💡 Para instalar o pdftotext no macOS:")
+                    print("   brew install poppler")
+                    return False
+                elif sistema['linux']:
+                    if sistema['termux']:
+                        print("❌ O pdftotext não está instalado no sistema.")
+                        print("💡 Para instalar o pdftotext no Termux:")
+                        print("   pkg install poppler")
+                    else:
+                        print("❌ O pdftotext não está instalado no sistema.")
+                        print("💡 Para instalar o pdftotext no Linux:")
+                        print("   sudo apt-get install poppler-utils  # Para sistemas baseados em Debian/Ubuntu")
+                        print("   sudo pacman -S poppler              # Para sistemas baseados em Arch Linux")
+                        print("   sudo dnf install poppler-utils     # Para sistemas baseados em Fedora")
+                    return False
+
+        # Converte o PDF para TXT usando o caminho completo no Windows
+        if sistema['windows'] and pdftotext_path:
+            resultado = subprocess.run(
+                [pdftotext_path, "-layout", caminho_pdf, caminho_txt],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+        else:
+            resultado = subprocess.run(
+                ["pdftotext", "-layout", caminho_pdf, caminho_txt],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+
+        if resultado.returncode != 0:
+            print(f"❌ Erro ao converter o PDF: {resultado.stderr.decode()}")
+            return False
+
         return True
+
     except Exception as e:
-        print(f"❌ Erro ao converter PDF com pdftotext: {e}")
+        print(f"❌ Erro ao converter o PDF: {str(e)}")
         return False
 
 # =============================================================================
 # FUNÇÕES DE VERIFICAÇÃO DE AMBIENTE E DEPENDÊNCIAS
 # =============================================================================
-def verificar_sistema() -> bool:
-    """
-    Verifica se o script está sendo executado no ambiente Termux.
-    Retorna True se estiver no Termux, False caso contrário.
-    """
+def verificar_sistema() -> dict:
+    """Verifica o sistema operacional e retorna informações sobre ele."""
     print("\n🔍 Verificando ambiente de execução...")
-    if 'TERMUX_VERSION' in os.environ:
-        print("✅ Executando no Termux")
-        return True
+    sistema = detectar_sistema()
+    
+    if sistema['termux']:
+        print("✅ Executando no Termux (Android)")
+    elif sistema['android']:
+        print("✅ Executando no Android (não-Termux)")
+    elif sistema['windows']:
+        print("✅ Executando no Windows")
+    elif sistema['macos']:
+        print("✅ Executando no macOS")
+    elif sistema['linux']:
+        print("✅ Executando no Linux")
     else:
-        print("ℹ️ Executando em ambiente não-Termux")
-        return False
+        print("⚠️ Sistema operacional não identificado com precisão")
+    
+    return sistema
 
 def instalar_dependencia_termux(pkg: str) -> None:
-    """
-    Verifica e instala um pacote do Termux, se necessário.
-    """
+    """Verifica e instala um pacote do Termux, se necessário."""
     try:
-        subprocess.run(['pkg', 'list-installed', pkg], check=True, capture_output=True)
-        print(f"✅ Pacote Termux {pkg} já está instalado")
-    except subprocess.CalledProcessError:
+        # Atualiza o repositório do Termux primeiro
+        subprocess.run(['pkg', 'update', '-y'], check=True, capture_output=True)
+        
+        # Verifica se o pacote já está instalado
+        resultado = subprocess.run(['pkg', 'list-installed', pkg], capture_output=True, text=True)
+        if pkg in resultado.stdout:
+            print(f"✅ Pacote Termux {pkg} já está instalado")
+            return
+            
         print(f"⚠️ Instalando pacote Termux {pkg}...")
-        try:
-            subprocess.run(['pkg', 'install', '-y', pkg], check=True)
-            print(f"✅ Pacote Termux {pkg} instalado com sucesso!")
-        except subprocess.CalledProcessError as e:
-            print(f"❌ Erro ao instalar pacote Termux {pkg}: {e}")
-            sys.exit(1)
+        subprocess.run(['pkg', 'install', '-y', pkg], check=True)
+        print(f"✅ Pacote Termux {pkg} instalado com sucesso!")
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Erro ao instalar pacote Termux {pkg}: {e}")
+        print("💡 Tente executar 'pkg update' manualmente e tente novamente")
+        sys.exit(1)
+    except Exception as e:
+        print(f"❌ Erro inesperado ao instalar {pkg}: {e}")
+        sys.exit(1)
 
 def instalar_dependencia_python(nome_pkg: str, pip_nome: str) -> None:
-    """
-    Tenta importar o pacote Python e, se não estiver instalado, realiza a instalação.
-    """
+    """Verifica e instala uma dependência Python, se necessária."""
     try:
+        # Tenta importar o módulo para verificar se já está instalado
         __import__(nome_pkg)
-        print(f"✅ {nome_pkg} já está instalado")
+        print(f"✅ Módulo Python {nome_pkg} já está instalado")
     except ImportError:
-        print(f"\n⚠️ Instalando {nome_pkg}...")
+        print(f"⚠️ Instalando módulo Python {nome_pkg}...")
+        sistema = detectar_sistema()
+        
+        # Comando base para pip
+        pip_cmd = [sys.executable, "-m", "pip", "install", pip_nome]
+        
+        # Ajusta para instalação de usuário em sistemas não-Termux
+        if not sistema['termux']:
+            pip_cmd.append("--user")
+        
         try:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", pip_nome])
-            print(f"✅ {nome_pkg} instalado com sucesso!")
+            subprocess.run(pip_cmd, check=True)
+            print(f"✅ Módulo Python {nome_pkg} instalado com sucesso!")
         except subprocess.CalledProcessError as e:
-            print(f"❌ Erro ao instalar {nome_pkg}: {e}")
-            print(f"💡 Tente instalar manualmente com: pip install --user {pip_nome}")
-            sys.exit(1)
-        except Exception as e:
-            print(f"❌ Erro inesperado ao instalar {nome_pkg}: {e}")
+            print(f"❌ Erro ao instalar módulo Python {nome_pkg}: {e}")
+            print(f"💡 Tente instalar manualmente: pip install {pip_nome}")
             sys.exit(1)
 
+def instalar_poppler() -> bool:
+    """Instala o pacote poppler (pdftotext) de acordo com o sistema operacional."""
+    sistema = detectar_sistema()
+    print("⚠️ O pdftotext não está instalado. Tentando instalar automaticamente...")
+    
+    try:
+        if sistema['termux']:
+            # Instala poppler no Termux
+            subprocess.run(['pkg', 'install', '-y', 'poppler'], check=True)
+            print("✅ poppler instalado com sucesso no Termux!")
+            return True
+        elif sistema['linux']:
+            # Instala poppler-utils no Linux
+            print("⚠️ Instalando poppler-utils no Linux...")
+            subprocess.run(['sudo', 'apt-get', 'update'], check=True)
+            subprocess.run(['sudo', 'apt-get', 'install', '-y', 'poppler-utils'], check=True)
+            print("✅ poppler-utils instalado com sucesso no Linux!")
+            return True
+        elif sistema['macos']:
+            # Instala poppler no macOS via Homebrew
+            print("⚠️ Instalando poppler no macOS via Homebrew...")
+            # Verifica se o Homebrew está instalado
+            try:
+                subprocess.run(['brew', '--version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            except FileNotFoundError:
+                print("❌ Homebrew não está instalado no macOS.")
+                print("💡 Instale o Homebrew primeiro: /bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"")
+                return False
+                
+            subprocess.run(['brew', 'install', 'poppler'], check=True)
+            print("✅ poppler instalado com sucesso no macOS!")
+            return True
+        elif sistema['windows']:
+            # No Windows, instala automaticamente o Poppler
+            print("⚠️ Instalando Poppler no Windows...")
+            import tempfile
+            import zipfile
+            import urllib.request
+            import shutil
+            import winreg
+            
+            # URL do Poppler para Windows
+            poppler_url = "https://github.com/oschwartz10612/poppler-windows/releases/download/v23.11.0-0/Release-23.11.0-0.zip"
+            
+            try:
+                # Cria diretório temporário para download
+                temp_dir = tempfile.mkdtemp()
+                zip_path = os.path.join(temp_dir, "poppler.zip")
+                
+                # Download do arquivo
+                print("📥 Baixando Poppler...")
+                urllib.request.urlretrieve(poppler_url, zip_path)
+                
+                # Diretório de instalação (Program Files)
+                program_files = os.environ.get('PROGRAMFILES', 'C:\\Program Files')
+                poppler_dir = os.path.join(program_files, "Poppler")
+                
+                # Cria diretório se não existir
+                os.makedirs(poppler_dir, exist_ok=True)
+                
+                # Extrai o arquivo ZIP
+                print("📦 Extraindo arquivos...")
+                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                    # Obtém o nome do diretório raiz dentro do ZIP
+                    root_dirs = {item.split('/')[0] for item in zip_ref.namelist() if '/' in item}
+                    if len(root_dirs) == 1:
+                        root_dir = root_dirs.pop()
+                        # Extrai para o diretório temporário primeiro
+                        zip_ref.extractall(temp_dir)
+                        # Move os arquivos do diretório raiz para o diretório de instalação
+                        extracted_dir = os.path.join(temp_dir, root_dir)
+                        for item in os.listdir(extracted_dir):
+                            src = os.path.join(extracted_dir, item)
+                            dst = os.path.join(poppler_dir, item)
+                            if os.path.exists(dst):
+                                if os.path.isdir(dst):
+                                    shutil.rmtree(dst)
+                                else:
+                                    os.remove(dst)
+                            shutil.move(src, dst)
+                    else:
+                        # Se não houver um diretório raiz único, extrai diretamente
+                        zip_ref.extractall(poppler_dir)
+                
+                # Adiciona ao PATH do sistema
+                print("🔧 Adicionando ao PATH do sistema...")
+                bin_dir = os.path.join(poppler_dir, "bin")
+                
+                # Abre a chave do registro para o PATH
+                key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment", 0, winreg.KEY_ALL_ACCESS)
+                try:
+                    path, _ = winreg.QueryValueEx(key, "PATH")
+                    # Verifica se o diretório já está no PATH
+                    if bin_dir.lower() not in path.lower():
+                        # Adiciona o diretório ao PATH
+                        new_path = path + ";" + bin_dir
+                        winreg.SetValueEx(key, "PATH", 0, winreg.REG_EXPAND_SZ, new_path)
+                        # Notifica o sistema sobre a mudança
+                        subprocess.run(["setx", "PATH", new_path], check=True, capture_output=True)
+                except FileNotFoundError:
+                    # Se a chave PATH não existir, cria-a
+                    winreg.SetValueEx(key, "PATH", 0, winreg.REG_EXPAND_SZ, bin_dir)
+                finally:
+                    winreg.CloseKey(key)
+                
+                # Atualiza o PATH da sessão atual
+                os.environ["PATH"] = bin_dir + ";" + os.environ.get("PATH", "")
+                
+                # Limpa arquivos temporários
+                shutil.rmtree(temp_dir, ignore_errors=True)
+                
+                print("✅ Poppler instalado com sucesso no Windows!")
+                print("⚠️ Você pode precisar reiniciar o terminal para que as alterações no PATH tenham efeito.")
+                
+                # Verifica se a instalação foi bem-sucedida tentando executar pdftotext
+                try:
+                    subprocess.run([os.path.join(bin_dir, "pdftotext"), "-v"], 
+                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+                    return True
+                except (subprocess.CalledProcessError, FileNotFoundError):
+                    print("⚠️ Poppler foi instalado, mas o pdftotext ainda não está disponível.")
+                    print("💡 Tente reiniciar o terminal e executar o script novamente.")
+                    return False
+                    
+            except Exception as e:
+                print(f"❌ Erro durante a instalação automática do Poppler: {str(e)}")
+                print("💡 Por favor, instale manualmente:")
+                print("   1. Baixe o Poppler para Windows em https://github.com/oschwartz10612/poppler-windows/releases/")
+                print("   2. Extraia o arquivo ZIP para uma pasta (ex: C:\\Poppler)")
+                print("   3. Adicione o diretório bin (ex: C:\\Poppler\\bin) ao PATH do sistema")
+                print("   4. Reinicie o terminal e execute este script novamente")
+                return False
+        else:
+            print("❌ Sistema operacional não suportado para instalação automática.")
+            return False
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Erro ao instalar poppler: {e}")
+        return False
+    except Exception as e:
+        print(f"❌ Erro inesperado ao instalar poppler: {e}")
+        return False
+
 def verificar_dependencias() -> None:
-    """
-    Verifica e instala as dependências necessárias tanto para Termux quanto para Python.
-    """
-    is_termux = verificar_sistema()
-    if is_termux:
-        for pkg in ['python', 'python-pip', 'git']:
+    """Verifica e instala as dependências necessárias para o sistema atual."""
+    sistema = verificar_sistema()
+    
+    if sistema['termux']:
+        # Pacotes essenciais para o Termux
+        pacotes_termux = ['python', 'python-pip', 'git', 'poppler', 'termux-api']
+        for pkg in pacotes_termux:
             instalar_dependencia_termux(pkg)
     
+    # Dependências Python comuns para todos os ambientes
     dependencias_python = {
-        'edge-tts': 'edge-tts',
-        'langdetect': 'langdetect',
-        'unidecode': 'unidecode',
-        'num2words': 'num2words',
+        'edge_tts': 'edge-tts>=6.1.5',
+        'langdetect': 'langdetect>=1.0.9',
+        'unidecode': 'unidecode>=1.3.6',
+        'num2words': 'num2words>=0.5.12',
+        'chardet': 'chardet>=5.0.0',
+        'requests': 'requests>=2.31.0',
     }
     for nome_pkg, pip_nome in dependencias_python.items():
         instalar_dependencia_python(nome_pkg, pip_nome)
 
-    # Verifica e instala o pdftotext (poppler) no Termux
-    if is_termux:
-        instalar_dependencia_termux('poppler')
-    else:
-        # Verifica se o pdftotext está disponível no sistema
-        try:
-            subprocess.run(['pdftotext', '-v'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            print("✅ pdftotext (poppler) já está instalado")
-        except FileNotFoundError:
-            print("⚠️ pdftotext não encontrado. Por favor, instale o pacote poppler-utils no seu sistema.")
-            print("💡 Em sistemas Linux: sudo apt-get install poppler-utils")
-            print("💡 Em sistemas Windows: Instale via https://blog.alivate.com.au/poppler-windows/")
+    # Verifica pdftotext
+    try:
+        subprocess.run(['pdftotext', '-v'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        print("✅ pdftotext (poppler) está funcionando corretamente")
+    except FileNotFoundError:
+        # Tenta instalar o poppler automaticamente
+        sistema = detectar_sistema()
+        if sistema['windows']:
+            print("📦 Poppler não encontrado. Iniciando instalação automática...")
+            if not instalar_poppler_windows():
+                print("❌ Não foi possível instalar o pdftotext automaticamente.")
+                print("💡 Para instalar o pdftotext manualmente:")
+                print("   - Windows: Baixe e instale o Poppler em https://github.com/oschwartz10612/poppler-windows/releases/")
+                print("     Adicione o diretório bin do Poppler ao PATH do sistema")
+        elif sistema['macos']:
+            print("❌ O pdftotext não está instalado no sistema.")
+            print("💡 Para instalar o pdftotext no macOS:")
+            print("   - macOS: Execute 'brew install poppler'")
+        elif sistema['termux']:
+            print("❌ O pdftotext não está instalado no sistema.")
+            print("💡 Para instalar o pdftotext no Termux:")
+            print("   - Termux: Execute 'pkg install poppler'")
+        else:  # Linux genérico
+            print("❌ O pdftotext não está instalado no sistema.")
+            print("💡 Para instalar o pdftotext no Linux:")
+            print("   - Linux: Execute 'sudo apt-get install poppler-utils'")
 
 # Executa a verificação de dependências antes de importar módulos de terceiros
 verificar_dependencias()
@@ -157,13 +561,15 @@ except ImportError:
 # FUNÇÕES UTILITÁRIAS
 # =============================================================================
 def limpar_tela() -> None:
-    """Limpa a tela do terminal."""
-    os.system("clear" if os.name == "posix" else "cls")
+    """Limpa a tela do terminal de forma compatível com todos os sistemas."""
+    sistema = detectar_sistema()
+    if sistema['windows']:
+        os.system("cls")
+    else:  # Linux, macOS, Android/Termux
+        os.system("clear")
 
 def obter_opcao(prompt: str, opcoes: list) -> str:
-    """
-    Solicita ao usuário uma entrada que esteja dentre as opções válidas.
-    """
+    """Solicita ao usuário uma entrada que esteja dentre as opções válidas."""
     while True:
         escolha = input(prompt).strip()
         if escolha in opcoes:
@@ -184,593 +590,496 @@ def ler_progresso(arquivo_progresso: str) -> int:
         return 0
 
 def limpar_nome_arquivo(nome: str) -> str:
-    """
-    Remove ou substitui caracteres inválidos em sistemas de arquivos,
-    como : /  * ? " < > | etc.
-    """
-    caracteres_invalidos = r'/:*?"<>|'
-    for c in caracteres_invalidos:
-        nome = nome.replace(c, '-')
-    return nome.strip()
-
-# =============================================================================
-# PROCESSAMENTO DE TEXTO
-# =============================================================================
-def romano_para_decimal(romano: str) -> int:
-    """
-    Converte números romanos para decimal.
-    """
-    valores = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000}
-    decimal = 0
-    prev_value = 0
-    for char in reversed(romano.upper()):
-        curr_value = valores.get(char, 0)
-        decimal = decimal + curr_value if curr_value >= prev_value else decimal - curr_value
-        prev_value = curr_value
-    return decimal
-
-def converter_ordinal(match: re.Match) -> str:
-    """
-    Converte números ordinais para texto, utilizando num2words.
-    """
-    numero = int(match.group(1))
-    sufixo = match.group(2)
-    if sufixo.lower() in ['º', 'ª']:
-        try:
-            return num2words(numero, lang='pt_BR', ordinal=True)
-        except Exception:
-            return match.group(0)
-    return match.group(0)
-
-def validar_texto_pt_br(texto: str) -> bool:
-    """
-    Valida se o texto está em português e trata casos de texto vazio.
-    Caso a detecção esteja indisponível ou o idioma não seja pt,
-    solicita confirmação ao usuário.
-    """
-    if not texto.strip():
-        print("\n⚠️ Aviso: O texto está vazio!")
-        return False
-
-    if LANG_DETECT_AVAILABLE:
-        try:
-            idioma = detect(texto)
-            if idioma != 'pt':
-                print(f"\n⚠️ Aviso: O texto pode não estar em português (idioma detectado: {idioma})")
-                print("Deseja continuar mesmo assim?")
-                opcao = obter_opcao("\n🔹 Sua escolha ([1] Sim / [2] Não): ", ['1', '2'])
-                return opcao == '1'
-        except Exception as e:
-            print(f"\n⚠️ Aviso: Não foi possível detectar o idioma automaticamente: {e}")
-    else:
-        print("\n⚠️ Aviso: A detecção de idioma não está disponível.")
-        print("Deseja continuar mesmo assim?")
-        opcao = obter_opcao("\n🔹 Sua escolha ([1] Sim / [2] Não): ", ['1', '2'])
-        return opcao == '1'
-    return True
-
-def otimizar_texto_tts(texto: str) -> str:
-    """
-    Realiza otimizações no texto para melhorar a pronúncia na conversão TTS:
-      - Remove ou substitui caracteres problemáticos.
-      - Converte números romanos, ordinais e algarismos.
-      - Substitui palavras e símbolos problemáticos.
-      - Ajusta pausas na pontuação.
-    """
-    caracteres_problematicos = {
-        "©": " copyright ",
-        "®": " marca registrada ",
-        "–": "-",
-        "—": "-",
-        "“": '"',
-        "”": '"',
-        "‘": "'",
-        "’": "'",
-        "ufeff": "",
-        "…": "..."
-    }
-    for chave, valor in caracteres_problematicos.items():
-        texto = texto.replace(chave, valor)
-
-    # Converte CAPÍTULO IV etc. em CAPÍTULO 4
-    texto = re.sub(
-        r'(CAPÍTULO|Capítulo|TÍTULO|Título|Parte|PARTE|Livro|LIVRO)\s+([IVXLCDM]+)',
-        lambda m: f"{m.group(1)} {romano_para_decimal(m.group(2))}",
-        texto
-    )
-
-    # Converte 1º, 2ª etc. para "primeiro", "segunda", etc.
-    texto = re.sub(r'(\d+)([ºª])', converter_ordinal, texto)
-
-    # Converte números romanos isolados em decimal
-    texto = re.sub(
-        r'\b([IVXLCDM]+)\b',
-        lambda m: str(romano_para_decimal(m.group(1))),
-        texto
-    )
-
-    # Substituições pontuais
-    substituicoes = {
-        'más': 'mas', 'pôr': 'por', 'têm': 'tem',
-        'à': 'a', 'às': 'as', 'é': 'eh',
-        'há': 'ha', 'através': 'atraves',
-        'após': 'apos', 'até': 'ate',
-        '1º': 'primeiro', '2º': 'segundo', '3º': 'terceiro',
-        'dr.': 'doutor', 'sr.': 'senhor', 'sra.': 'senhora',
-        'prof.': 'professor', 'profa.': 'professora',
-        '%': ' porcento', '&': ' e ', '@': ' arroba ', '#': ' hashtag ',
-        'pra': 'para', 'pro': 'para o',
-        'vc': 'você', 'tb': 'também',
-        'q': 'que', 'td': 'tudo'
-    }
-    texto = texto.lower()
-    for original, corrigida in substituicoes.items():
-        texto = re.sub(rf'\b{original}\b', corrigida, texto, flags=re.IGNORECASE)
-
-    # Converte todos os números para texto
-    texto = re.sub(r'\d+', lambda m: num2words(int(m.group()), lang='pt_BR'), texto)
-
-    # Ajusta pontuações para inserir pausas
-    pontuacoes = {'.': '. ', ',': ', ', ';': '; ', ':': ': ', '!': '! ', '?': '? ', '...': '... '}
-    for sinal, substituicao in pontuacoes.items():
-        texto = texto.replace(sinal, substituicao)
-
-    # Ajusta múltiplos pontos
-    texto = re.sub(r'\.{3,}', '... ', texto)
-
-    # Remove espaços duplicados
-    texto = re.sub(r'\s+', ' ', texto)
-    return texto.strip()
-
-# =============================================================================
-# PROCESSAMENTO DE ÁUDIO
-# =============================================================================
-
-def tratar_sinal_interrupcao(signum, frame) -> None:
-    """
-    Manipulador de sinal para Ctrl+C: 
-    - Se for a primeira vez, define interrupcao_requisitada = True e avisa.
-    - Se for a segunda vez, encerra o script imediatamente.
-    """
-    global interrupcao_requisitada
-    if interrupcao_requisitada:
-        print("\n\n🛑 Interrupção forçada! Encerrando...")
-        sys.exit(1)
-    else:
-        interrupcao_requisitada = True
-        print("\n\n🛑 Pressione Ctrl+C novamente para interromper a conversão imediatamente...")
-
-signal.signal(signal.SIGINT, tratar_sinal_interrupcao)
-
-def verificar_interrupcao() -> bool:
-    """Verifica se o usuário pressionou a tecla 'q' para interromper a conversão."""
-    global interrupcao_requisitada
-    # Implementação cross-platform para verificar entrada do teclado
-    if sys.platform == 'win32':
-        try:
-            import msvcrt
-            if msvcrt.kbhit():
-                tecla = msvcrt.getch().decode('utf-8').lower()
-                if tecla == 'q':
-                    interrupcao_requisitada = True
-                    print("\n\n🛑 Conversão interrompida! Pressione Enter para continuar...")
-                    input()
-                    return True
-        except ImportError:
-            pass
-    else:
-        # Implementação para sistemas Unix-like
-        if select.select([sys.stdin], [], [], 0)[0]:
-            tecla = sys.stdin.read(1).lower()
-            if tecla == 'q':
-                interrupcao_requisitada = True
-                print("\n\n🛑 Conversão interrompida! Pressione Enter para continuar...")
-                input()
-                return True
-    return False
-
-async def tratar_interrupcao(temp_files: list, arquivo_saida: str) -> bool:
-    """
-    Trata a interrupção da conversão, oferecendo opções para o usuário:
-      1. Retornar ao menu inicial
-      2. Manter arquivos parciais separados
-      3. Unificar arquivos convertidos
-      4. Excluir arquivos convertidos
-    Também pergunta se o registro de progresso deve ser mantido.
-    """
-    print("\n\n🛑 Conversão interrompida!")
-    print("\nEscolha uma opção:")
-    print("[1] Retornar ao menu inicial")
-    print("[2] Manter arquivos parciais separados")
-    print("[3] Unificar arquivos convertidos")
-    print("[4] Excluir arquivos convertidos")
-    opcao = obter_opcao("\n🔹 Sua escolha ([1/2/3/4]): ", ['1', '2', '3', '4'])
-    
-    if opcao == '1':
-        print("\n✅ Retornando ao menu inicial...")
-        if len(temp_files) > 0:
-            print("\n💾 Os arquivos parciais foram mantidos e poderão ser retomados posteriormente.")
-    elif opcao == '2':
-        print("\n✅ Arquivos parciais mantidos separadamente.")
-        print("\n💡 Você pode encontrar os arquivos com a extensão .partXXX.mp3")
-    elif opcao == '3':
-        print("\n🔄 Unificando arquivos convertidos...")
-        try:
-            with open(arquivo_saida, 'wb') as outfile:
-                for temp_file in temp_files:
-                    if os.path.exists(temp_file):
-                        with open(temp_file, 'rb') as infile:
-                            while True:
-                                chunk = infile.read(BUFFER_IO)
-                                if not chunk:
-                                    break
-                                outfile.write(chunk)
-                        os.remove(temp_file)
-                        print(f"\n🗑️ Arquivo temporário removido: {temp_file}")
-            print("✅ Arquivos unificados com sucesso!")
-            print(f"\n💾 Arquivo final salvo como: {arquivo_saida}")
-        except Exception as e:
-            print(f"\n⚠️ Erro ao unificar arquivos: {e}")
-    else:  # opcao == '4'
-        print("\n🗑️ Excluindo arquivos convertidos...")
-        for temp_file in temp_files:
-            try:
-                if os.path.exists(temp_file):
-                    os.remove(temp_file)
-            except Exception as e:
-                print(f"\n⚠️ Erro ao excluir {temp_file}: {e}")
-        print("✅ Arquivos excluídos com sucesso!")
-
-    arquivo_progresso = f"{arquivo_saida}.progress"
-    if os.path.exists(arquivo_progresso):
-        print("\n💾 Deseja manter o registro de progresso para retomar a conversão posteriormente?")
-        opcao_prog = obter_opcao("\n🔹 Sua escolha ([1] Sim / [2] Não): ", ['1', '2'])
-        if opcao_prog == '2':
-            try:
-                os.remove(arquivo_progresso)
-                print("✅ Registro de progresso apagado com sucesso!")
-            except Exception as e:
-                print(f"\n⚠️ Erro ao apagar registro de progresso: {e}")
-        else:
-            print("✅ Registro de progresso mantido para continuação posterior.")
-            print("\n💡 Você poderá retomar a conversão do ponto onde parou selecionando o mesmo arquivo de saída.")
-    
-    if opcao == '1':
-        limpar_tela()
-        return True  # Indica que deve retornar ao menu
-    else:
-        print("\n👋 Obrigado por usar o Conversor TTS Lite!")
-        sys.exit(0)  # Encerra o script para as opções 2, 3 e 4
-
-async def processar_audio(texto: str, arquivo_saida: str, voz: str, chunk_size: int = 2000) -> bool:
-    """
-    Processa o texto em chunks para conversão em áudio via edge-tts.
-    Gera arquivos temporários para cada parte e, dependendo da escolha do usuário,
-    unifica os arquivos ao final.
-    """
-    # Não renomearemos o arquivo de saída pela primeira linha do texto
-    # para manter o mesmo nome base informado.
-
-    # Pergunta ao usuário se quer manter partes separadas ou unificar
-    print("\n📦 Preferência de arquivos:")
-    print("[Enter/N] Unificar arquivos e excluir partes (padrão)")
-    print("[S] Manter arquivos separados")
-    opcao = input("\n🔹 Sua escolha: ").strip().upper()
-    manter_separado = (opcao == 'S')
-
-    if not validar_texto_pt_br(texto):
-        print("\n🛑 Conversão cancelada pelo usuário.")
-        return False
-
-    texto = otimizar_texto_tts(texto)
-
-    global interrupcao_requisitada
-    interrupcao_requisitada = False  # Redefine a flag a cada conversão
-
-    # Ajusta o chunk_size dinamicamente, mas não muito pequeno
-    chunk_size = max(2000, min(len(texto) // 10, 5000))
-    partes = [texto[i:i + chunk_size] for i in range(0, len(texto), chunk_size)]
-    total_partes = len(partes)
-    print(f"\n🔄 Processando {total_partes} partes...")
-    print("Pressione 'q' para interromper a conversão a qualquer momento.\n")
-
-    arquivo_progresso = f"{arquivo_saida}.progress"
-    indice_inicial = ler_progresso(arquivo_progresso)
-    if indice_inicial > 0:
-        print(f"📝 Retomando a partir da parte {indice_inicial + 1}")
-
-    # Lista para armazenar os arquivos temporários
-    temp_files = []
-
-    # Processa cada parte em loop
-    for i, parte in enumerate(partes[indice_inicial:], start=indice_inicial + 1):
-        if interrupcao_requisitada or verificar_interrupcao():
-            gravar_progresso(arquivo_progresso, i - 1)
-            await tratar_interrupcao(temp_files, arquivo_saida)
-            limpar_tela()
-            return False
-
-        print(f"\r📊 Progresso: {i}/{total_partes} ({int(i / total_partes * 100)}%) " + "=" * (i * 20 // total_partes) + ">", end="")
-
-        max_tentativas = 5
-        for tentativa in range(1, max_tentativas + 1):
-            try:
-                comunicador = edge_tts.Communicate(parte.strip(), voz)
-                # Arquivo temporário: <arquivo_saida>.partXYZ.mp3
-                arquivo_temp = f"{arquivo_saida}.part{i:03d}.mp3"
-                await comunicador.save(arquivo_temp)
-                temp_files.append(arquivo_temp)
-
-                # Grava progresso
-                gravar_progresso(arquivo_progresso, i)
-                break
-
-            except Exception as e:
-                if tentativa < max_tentativas:
-                    tempo_espera = 2 ** tentativa
-                    print(f"\n⚠️ Erro ao processar parte {i}. Tentativa {tentativa}/{max_tentativas}. Aguardando {tempo_espera}s...")
-                    await asyncio.sleep(tempo_espera)
-                else:
-                    print(f"\n⚠️ Erro ao processar parte {i} após {max_tentativas} tentativas: {e}")
-                    continue
-
-    # Se o loop terminar sem interrupção
-    if not interrupcao_requisitada:
-        if not manter_separado:
-            print("\n\n📦 Combinando arquivos...")
-            try:
-                with open(arquivo_saida, 'wb') as outfile:
-                    for temp_file in temp_files:
-                        if os.path.exists(temp_file):
-                            with open(temp_file, 'rb') as infile:
-                                while True:
-                                    chunk = infile.read(BUFFER_IO)
-                                    if not chunk:
-                                        break
-                                    outfile.write(chunk)
-                            os.remove(temp_file)
-                            print(f"\r🗑️ Arquivo temporário removido: {temp_file}", end="")
-                # Remove arquivo de progresso se existir
-                if os.path.exists(arquivo_progresso):
-                    os.remove(arquivo_progresso)
-                print("\n✅ Conversão concluída! Arquivo unificado criado.")
-            except Exception as e:
-                print(f"\n⚠️ Erro ao unificar arquivos: {e}")
-        else:
-            print("\n✅ Conversão concluída! Arquivos mantidos separados.")
-        return True
-
-    return False
-
-def ler_arquivo(caminho: str) -> str:
-    """
-    Tenta ler o conteúdo do arquivo com detecção de encoding (chardet).
-    """
-    try:
-        with open(caminho, 'rb') as f:
-            conteudo_bruto = f.read()
-            resultado = chardet.detect(conteudo_bruto)
-            encoding_detectado = resultado.get('encoding')
-            # Caso detecte algo nulo mas haja presença de caracteres nulos, tenta 'utf-16-le'
-            if encoding_detectado is None and b'\x00' in conteudo_bruto:
-                encoding_detectado = 'utf-16-le'
-            if encoding_detectado:
-                return conteudo_bruto.decode(encoding_detectado)
-    except Exception as e:
-        print(f"❌ Erro ao ler o arquivo: {e}")
-
-    print(f"❌ Não foi possível ler o arquivo {caminho}. Verifique o encoding.")
-    return None
+    """Remove ou substitui caracteres inválidos em sistemas de arquivos."""
+    # Remove caracteres inválidos e substitui espaços por underscores
+    nome_limpo = re.sub(r'[<>:"/\\|?*]', '', nome)
+    nome_limpo = nome_limpo.replace(' ', '_')
+    return nome_limpo
 
 # =============================================================================
 # FUNÇÕES DE ATUALIZAÇÃO
 # =============================================================================
-def atualizar_script(finalizar_apos=False):
-    """
-    Atualiza o script baixando a versão mais recente diretamente do GitHub.
-    Sobrescreve o arquivo atual e oferece opção de reiniciar automaticamente ou encerrar.
-    """
-    import shutil
-
-    url = "https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/conversor_tts_lite.py"
-    arquivo_temp = "conversor_tts_lite_temp.py"
-    arquivo_atual = sys.argv[0]
-
-    print("\n🔄 Iniciando atualização do Conversor TTS...")
-
-    try:
-        subprocess.run(["curl", "-o", arquivo_temp, url], check=True)
-        print("✅ Nova versão baixada com sucesso.")
-    except subprocess.CalledProcessError:
-        print("❌ Erro ao baixar com curl. Tentando com wget...")
-        try:
-            subprocess.run(["wget", "-O", arquivo_temp, url], check=True)
-            print("✅ Nova versão baixada com sucesso.")
-        except subprocess.CalledProcessError:
-            print("❌ Falha ao baixar a atualização. Verifique sua conexão com a internet.")
-            return
-
-    try:
-        shutil.move(arquivo_temp, arquivo_atual)
-        print("✅ Atualização concluída com sucesso!")
-    except Exception as e:
-        print(f"❌ Erro ao substituir o arquivo: {e}")
+def atualizar_script() -> None:
+    """Atualiza o script para a versão mais recente do GitHub."""
+    exibir_banner()
+    print("\n🔄 ATUALIZAÇÃO DO SCRIPT")
+    print("\nIsso irá baixar a versão mais recente do script do GitHub.")
+    confirmar = obter_opcao("Deseja continuar? (s/n): ", ['s', 'n'])
+    
+    if confirmar != 's':
+        print("\n❌ Atualização cancelada pelo usuário.")
+        input("\nPressione ENTER para continuar...")
         return
-
-    if finalizar_apos:
-        print("\n✅ Script atualizado e encerrado. Execute novamente para carregar a nova versão.")
-        sys.exit(0)
-    else:
-        opcao = input("\n🔄 Deseja reiniciar o script agora? (S/N): ").strip().lower()
-        if opcao == 's':
-            print("🔄 Reiniciando...")
-            os.execv(sys.executable, [sys.executable] + sys.argv)
+    
+    print("\n🔄 Baixando a versão mais recente...")
+    
+    # Obtém o caminho do script atual
+    script_atual = os.path.abspath(__file__)
+    script_backup = script_atual + ".backup"
+    
+    # Cria um backup do script atual
+    try:
+        import shutil
+        shutil.copy2(script_atual, script_backup)
+        print(f"✅ Backup criado: {script_backup}")
+    except Exception as e:
+        print(f"⚠️ Não foi possível criar backup: {str(e)}")
+        input("\nPressione ENTER para continuar...")
+        return
+    
+    # Baixa a nova versão
+    sistema = detectar_sistema()
+    url = "https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/conversor_tts_lite.py"
+    
+    try:
+        if sistema['windows']:
+            # No Windows, usa o módulo requests se disponível, senão usa curl
+            try:
+                import requests
+                response = requests.get(url)
+                if response.status_code == 200:
+                    with open(script_atual, 'wb') as f:
+                        f.write(response.content)
+                    print("✅ Script atualizado com sucesso!")
+                else:
+                    raise Exception(f"Erro ao baixar: código {response.status_code}")
+            except ImportError:
+                # Fallback para curl no Windows
+                resultado = subprocess.run(
+                    ["curl", "-o", script_atual, url],
+                    capture_output=True, text=True
+                )
+                if resultado.returncode != 0:
+                    raise Exception(f"Erro curl: {resultado.stderr}")
+                print("✅ Script atualizado com sucesso!")
+        else:
+            # Linux, macOS, Android/Termux
+            resultado = subprocess.run(
+                ["curl", "-o", script_atual, url],
+                capture_output=True, text=True
+            )
+            if resultado.returncode != 0:
+                raise Exception(f"Erro curl: {resultado.stderr}")
+            print("✅ Script atualizado com sucesso!")
+        
+        print("\n🔄 O script será reiniciado para aplicar as atualizações.")
+        input("Pressione ENTER para continuar...")
+        
+        # Reinicia o script
+        python = sys.executable
+        os.execl(python, python, script_atual)
+        
+    except Exception as e:
+        print(f"\n❌ Erro durante a atualização: {str(e)}")
+        print(f"\n🔄 Restaurando backup...")
+        try:
+            shutil.copy2(script_backup, script_atual)
+            print("✅ Backup restaurado com sucesso!")
+        except Exception as e2:
+            print(f"❌ Erro ao restaurar backup: {str(e2)}")
+            print(f"⚠️ O backup está disponível em: {script_backup}")
+        
+        input("\nPressione ENTER para continuar...")
 
 # =============================================================================
-# INTERFACE DO USUÁRIO (CLI)
+# FUNÇÕES DE MENU E INTERFACE
 # =============================================================================
-def exibir_menu() -> str:
-    print("\n" + "=" * 60)
-    print("""\
-████████╗████████╗███████╗
-╚══██╔══╝╚══██╔══╝██╔════╝
-   ██║      ██║   ███████╗
-   ██║      ██║   ╚════██║
-   ██║      ██║   ███████║
-   ╚═╝      ╚═╝   ╚══════╝
-""")
-    print("=" * 60)
-    print("\n[1] 🚀 Iniciar Conversão")
-    print("[2] 🎙️ Testar Vozes")
-    print("[3] ❓ Ajuda")
-    print("[4] 🔄 Atualizar Script")
-    print("[5] 🔄 Atualizar e Sair")
-    print("[6] 🚪 Sair")
-    print("-" * 50)
-    return obter_opcao("\nEscolha: ", ['1', '2', '3', '4', '5', '6'])
-
-def exibir_ajuda() -> None:
-    print("\n" + "-" * 50)
-    print("📚 GUIA DO CONVERSOR TTS")
-    print("-" * 50)
-    print("\n1️⃣ PREPARAÇÃO")
-    print("• Salve seu texto em um arquivo .txt ou .pdf")
-    print("• Coloque-o na pasta Downloads")
-    print("\n2️⃣ CONVERSÃO")
-    print("• Selecione 'Iniciar'")
-    print("• Escolha o arquivo desejado")
-    print("• Selecione a voz")
-    print("\n3️⃣ RECURSOS")
-    print("• Conversão de números para texto")
-    print("• Otimizações para o português")
-    print("• Processamento de textos longos")
-    print("• Detecção de idioma (para avisar se não for PT-BR)")
-    print("\n4️⃣ DICAS")
-    print("• Teste diferentes vozes")
-    print("• Use Ctrl+C para interromper a conversão (pressione novamente para sair)")
-    print("• O áudio será salvo em uma pasta específica dentro de Downloads")
-    input("\nPressione Enter para voltar...")
+def exibir_banner() -> None:
+    """Exibe o banner do programa."""
     limpar_tela()
+    print("""
+╔════════════════════════════════════════════╗
+║         CONVERSOR TTS - EDGE TTS          ║
+║        Text-to-Speech em PT-BR            ║
+╚════════════════════════════════════════════╝
+""")
 
-def escolher_voz() -> str:
-    print("\n" + "-" * 50)
-    print("🎙️ ESCOLHA A VOZ PARA A CONVERSÃO")
-    print("\n⭐ A voz padrão é 'Thalita' - otimizada para múltiplos idiomas")
-    for indice, voz in enumerate(VOZES_PT_BR, start=1):
-        detalhe = " (Voz padrão)" if indice == 1 else ""
-        print(f"  [{indice}] {voz}{detalhe}")
-    escolha = input("\nDigite o número da voz desejada: ").strip()
-    while not (escolha.isdigit() and 1 <= int(escolha) <= len(VOZES_PT_BR)):
-        print("⚠️ Opção inválida! Escolha um número da lista.")
-        escolha = input("\nDigite o número da voz desejada: ").strip()
+def menu_principal() -> str:
+    """Exibe o menu principal e retorna a opção escolhida."""
+    exibir_banner()
+    print("\nEscolha uma opção:")
+    print("1. 🚀 INICIAR")
+    print("2. 🎙️ VOZES")
+    print("3. ❓ AJUDA")
+    print("4. 🔄 ATUALIZAR")
+    print("5. 🚪 SAIR")
+    return obter_opcao("\nOpção: ", ['1', '2', '3', '4', '5'])
+
+def menu_vozes() -> str:
+    """Exibe o menu de seleção de vozes e retorna a voz escolhida."""
+    exibir_banner()
+    print("\nVozes disponíveis:")
+    for i, voz in enumerate(VOZES_PT_BR, 1):
+        print(f"{i}. {voz}")
+    print(f"{len(VOZES_PT_BR) + 1}. Voltar")
+    
+    opcoes = [str(i) for i in range(1, len(VOZES_PT_BR) + 2)]
+    escolha = obter_opcao("\nEscolha uma voz: ", opcoes)
+    
+    if escolha == str(len(VOZES_PT_BR) + 1):
+        return None
     return VOZES_PT_BR[int(escolha) - 1]
 
-async def converter_audio() -> None:
-    limpar_tela()
-    print("\n📖 Conversor de Texto para Fala - Modo Leve")
+def exibir_ajuda() -> None:
+    """Exibe o guia de ajuda do programa."""
+    exibir_banner()
+    print("""
+📖 GUIA DE USO:
 
-    # Descobrindo o diretório de downloads ou equivalente
-    diretorio_padrao = os.path.expanduser("~/storage/downloads")
-    if not os.path.exists(diretorio_padrao):
-        diretorio_padrao = os.path.expanduser("~/storage/documents")
-    if not os.path.exists(diretorio_padrao):
-        diretorio_padrao = "/storage/emulated/0/Download"
-    if not os.path.exists(diretorio_padrao):
-        diretorio_padrao = os.path.expanduser("~")
-    if not os.path.exists(diretorio_padrao):
-        print(f"⚠️ Diretório não encontrado: {diretorio_padrao}")
-        print("ℹ️ Dica: Verifique se o Termux tem permissão de acesso ao armazenamento (termux-setup-storage).")
-        return
+1. Prepare seu arquivo de texto (.txt) ou PDF (.pdf) e salve-o em um local acessível
+2. Escolha 'INICIAR' no menu principal
+3. Navegue pelos diretórios e selecione o arquivo desejado
+   - Você pode escolher um arquivo da lista numerada
+   - Mudar para outro diretório usando a opção 'D'
+   - Digitar o caminho completo manualmente usando a opção 'M'
+4. Escolha uma das vozes disponíveis
+5. Aguarde a conversão ser concluída
 
-    # Lista arquivos .txt e .pdf no diretório
-    arquivos = [f for f in os.listdir(diretorio_padrao) if f.endswith(('.txt', '.pdf'))]
-    if not arquivos:
-        print("⚠️ Nenhum arquivo TXT ou PDF encontrado no diretório de downloads!")
-        return
+⚠️ OBSERVAÇÕES:
+• O texto será dividido automaticamente em partes menores
+• Números e abreviações serão convertidos automaticamente
+• O progresso é salvo em caso de interrupção
+• Os arquivos de áudio serão salvos na mesma pasta do texto
+• Arquivos PDF serão convertidos automaticamente para TXT
+""")
+    input("\nPressione ENTER para voltar ao menu principal...")
 
-    print("📄 Arquivos disponíveis:")
-    for indice, arquivo in enumerate(arquivos, start=1):
-        print(f"[{indice}] {arquivo}")
+async def testar_voz(voz: str) -> None:
+    """Testa uma voz específica com um texto de exemplo."""
+    texto_teste = "Olá! Esta é uma demonstração da minha voz."
+    communicate = edge_tts.Communicate(texto_teste, voz)
+    
+    try:
+        await communicate.save("teste_voz.mp3")
+        print("\n✅ Arquivo de teste gerado: teste_voz.mp3")
+        
+        # Tenta reproduzir o arquivo de teste
+        sistema = detectar_sistema()
+        if sistema['termux']:
+            subprocess.run(['termux-media-player', 'play', 'teste_voz.mp3'])
+        elif sistema['windows']:
+            os.startfile('teste_voz.mp3')
+        else:  # Linux e macOS
+            subprocess.run(['xdg-open', 'teste_voz.mp3'])
+            
+        await asyncio.sleep(3)  # Aguarda a reprodução
+        
+        # Limpa o arquivo de teste
+        if os.path.exists("teste_voz.mp3"):
+            os.remove("teste_voz.mp3")
+            
+    except Exception as e:
+        print(f"\n❌ Erro ao testar voz: {str(e)}")
 
-    opcao = input("\nDigite o número do arquivo desejado: ").strip()
-    while not (opcao.isdigit() and 1 <= int(opcao) <= len(arquivos)):
-        print("⚠️ Opção inválida! Escolha um número da lista.")
-        opcao = input("\nDigite o número do arquivo desejado: ").strip()
+# =============================================================================
+# FUNÇÕES DE PROCESSAMENTO DE TEXTO E CONVERSÃO
+# =============================================================================
+def listar_arquivos(diretorio: str) -> list:
+    """Lista arquivos TXT e PDF no diretório especificado."""
+    arquivos = []
+    try:
+        for item in os.listdir(diretorio):
+            caminho_completo = os.path.join(diretorio, item)
+            if os.path.isfile(caminho_completo):
+                ext = os.path.splitext(item)[1].lower()
+                if ext in ['.txt', '.pdf']:
+                    arquivos.append(item)
+    except Exception as e:
+        print(f"\n⚠️ Erro ao listar arquivos: {str(e)}")
+    return sorted(arquivos)
 
-    arquivo_selecionado = arquivos[int(opcao) - 1]
-    caminho_completo = os.path.join(diretorio_padrao, arquivo_selecionado)
-    print(f"\n📄 Lendo arquivo: {arquivo_selecionado}")
-
-    # Se for PDF, converte para TXT temporariamente
-    if arquivo_selecionado.endswith('.pdf'):
-        caminho_txt_temp = caminho_completo.replace('.pdf', '.temp.txt')
-        if not converter_pdf(caminho_completo, caminho_txt_temp):
-            print("⚠️ Falha ao converter PDF. Operação cancelada.")
-            return
-        caminho_completo = caminho_txt_temp
-
-    texto = ler_arquivo(caminho_completo)
-    if not texto:
-        return
-
-    voz = escolher_voz()
-
-    # Cria pasta específica para armazenar os arquivos (temporários e final)
-    nome_base = Path(caminho_completo).stem
-    pasta_destino = os.path.join(diretorio_padrao, f"{nome_base}_ConversorTTS")
-    os.makedirs(pasta_destino, exist_ok=True)
-
-    # Define o caminho do arquivo final (Dom Casmurro.mp3, por exemplo)
-    arquivo_saida = os.path.join(pasta_destino, f"{nome_base}.mp3")
-
-    # Faz a conversão
-    await processar_audio(texto, arquivo_saida, voz)
-    print(f"\n📂 Arquivos salvos em: {pasta_destino}")
-
-    # Remove TXT temporário se veio de PDF
-    if arquivo_selecionado.endswith('.pdf') and os.path.exists(caminho_txt_temp):
-        os.remove(caminho_txt_temp)
-
-    input("\nPressione Enter para voltar ao menu...")
-    limpar_tela()
-
-async def testar_vozes() -> None:
-    limpar_tela()
-    print("\n🔊 Gerando arquivos de teste para cada voz...\n")
-
-    diretorio_testes = "vozes_teste"
-    os.makedirs(diretorio_testes, exist_ok=True)
-
-    texto_teste = "Este é um teste da voz para conversão de texto em fala."
-
-    for voz in VOZES_PT_BR:
-        print(f"\n🎙️ Testando voz: {voz}")
-        arquivo_mp3 = os.path.join(diretorio_testes, f"{voz}.mp3")
-        comunicador = edge_tts.Communicate(texto_teste, voz)
-        await comunicador.save(arquivo_mp3)
-        print(f"✅ Arquivo salvo: {arquivo_mp3}")
-
-    print("\n✅ Testes concluídos!")
-    print(f"📂 Arquivos salvos em: {diretorio_testes}")
-    input("\nPressione Enter para voltar ao menu...")
-    limpar_tela()
-
-async def main():
+def selecionar_arquivo() -> str:
+    """Interface aprimorada para seleção de arquivo com navegação por diretórios."""
+    sistema = detectar_sistema()
+    
+    # Define o diretório inicial baseado no sistema
+    if sistema['termux'] or sistema['android']:
+        dir_atual = '/storage/emulated/0/Download'
+    elif sistema['windows']:
+        dir_atual = os.path.join(os.path.expanduser('~'), 'Desktop')
+    elif sistema['macos']:
+        dir_atual = os.path.join(os.path.expanduser('~'), 'Desktop')
+    else:  # Linux
+        dir_atual = os.path.join(os.path.expanduser('~'), 'Desktop')
+    
     while True:
-        opcao = exibir_menu()
-        if opcao == '1':
-            await converter_audio()
-        elif opcao == '2':
-            await testar_vozes()
-        elif opcao == '3':
+        exibir_banner()
+        print("\n📂 SELEÇÃO DE ARQUIVO")
+        print(f"\nDiretório atual: {dir_atual}")
+        print("\nArquivos disponíveis:")
+        
+        # Lista arquivos no diretório atual
+        arquivos = listar_arquivos(dir_atual)
+        if not arquivos:
+            print("\n⚠️ Nenhum arquivo TXT ou PDF encontrado neste diretório")
+        else:
+            for i, arquivo in enumerate(arquivos, 1):
+                print(f"{i}. {arquivo}")
+        
+        print("\nOpções:")
+        print("D. Mudar diretório")
+        print("M. Digitar caminho manualmente")
+        print("V. Voltar ao menu principal")
+        
+        escolha = input("\nEscolha uma opção: ").strip().upper()
+        
+        if escolha == 'V':
+            return ''
+        elif escolha == 'D':
+            novo_dir = input("\nDigite o caminho do novo diretório: ").strip()
+            if os.path.isdir(novo_dir):
+                dir_atual = novo_dir
+            else:
+                print("\n❌ Diretório inválido")
+                input("\nPressione ENTER para continuar...")
+        elif escolha == 'M':
+            caminho = input("\nDigite o caminho completo do arquivo: ").strip()
+            if not os.path.exists(caminho):
+                print(f"\n❌ Arquivo não encontrado: {caminho}")
+                input("\nPressione ENTER para continuar...")
+                continue
+            
+            ext = os.path.splitext(caminho)[1].lower()
+            if ext == '.pdf':
+                caminho_txt = os.path.splitext(caminho)[0] + '.txt'
+                if not converter_pdf(caminho, caminho_txt):
+                    print("\n⚠️ Falha na conversão do PDF. Tente outro arquivo.")
+                    input("\nPressione ENTER para continuar...")
+                    continue
+                return caminho_txt
+            elif ext == '.txt':
+                return caminho
+            else:
+                print(f"\n❌ Formato não suportado: {ext}")
+                print("💡 Apenas arquivos .txt e .pdf são suportados")
+                input("\nPressione ENTER para continuar...")
+        elif escolha.isdigit():
+            indice = int(escolha) - 1
+            if 0 <= indice < len(arquivos):
+                arquivo_selecionado = arquivos[indice]
+                caminho_completo = os.path.join(dir_atual, arquivo_selecionado)
+                
+                if arquivo_selecionado.lower().endswith('.pdf'):
+                    caminho_txt = os.path.splitext(caminho_completo)[0] + '.txt'
+                    if not converter_pdf(caminho_completo, caminho_txt):
+                        print("\n⚠️ Falha na conversão do PDF. Tente outro arquivo.")
+                        input("\nPressione ENTER para continuar...")
+                        continue
+                    return caminho_txt
+                else:  # .txt
+                    return caminho_completo
+            else:
+                print("\n❌ Opção inválida")
+                input("\nPressione ENTER para continuar...")
+        else:
+            print("\n❌ Opção inválida")
+            input("\nPressione ENTER para continuar...")
+
+
+def detectar_encoding(caminho_arquivo: str) -> str:
+    """Detecta o encoding de um arquivo de texto."""
+    try:
+        # Tenta detectar automaticamente com chardet
+        with open(caminho_arquivo, 'rb') as f:
+            resultado = chardet.detect(f.read())
+        encoding_detectado = resultado['encoding']
+        
+        # Se não conseguir detectar, tenta encodings comuns
+        if not encoding_detectado:
+            for enc in ENCODINGS_TENTATIVAS:
+                try:
+                    with open(caminho_arquivo, 'r', encoding=enc) as f:
+                        f.read(100)  # Tenta ler alguns caracteres
+                    return enc
+                except UnicodeDecodeError:
+                    continue
+            return 'utf-8'  # Fallback para utf-8
+        
+        return encoding_detectado
+    except Exception as e:
+        print(f"\n⚠️ Erro ao detectar encoding: {str(e)}")
+        return 'utf-8'  # Fallback para utf-8
+
+def ler_arquivo_texto(caminho_arquivo: str) -> str:
+    """Lê o conteúdo de um arquivo de texto com detecção automática de encoding."""
+    encoding = detectar_encoding(caminho_arquivo)
+    try:
+        with open(caminho_arquivo, 'r', encoding=encoding) as f:
+            conteudo = f.read()
+        return conteudo
+    except Exception as e:
+        print(f"\n❌ Erro ao ler arquivo: {str(e)}")
+        return ""
+
+def processar_texto(texto: str) -> str:
+    """Processa o texto para melhorar a pronúncia e entonação."""
+    # Remove espaços extras e quebras de linha desnecessárias
+    texto = re.sub(r'\s+', ' ', texto)
+    
+    # Substitui abreviações comuns
+    abreviacoes = {
+        r'\bDr\.\b': 'Doutor',
+        r'\bSr\.\b': 'Senhor',
+        r'\bSra\.\b': 'Senhora',
+        r'\bProf\.\b': 'Professor',
+        r'\bex\.\b': 'exemplo',
+        r'\betc\.\b': 'etcétera',
+    }
+    
+    for abrev, expansao in abreviacoes.items():
+        texto = re.sub(abrev, expansao, texto)
+    
+    # Converte números para texto (apenas números isolados)
+    def converter_numero(match):
+        num = match.group(0)
+        try:
+            return num2words(int(num), lang='pt_BR')
+        except:
+            return num
+    
+    texto = re.sub(r'\b\d+\b', converter_numero, texto)
+    
+    return texto
+
+def dividir_texto(texto: str, max_chars: int = 2000) -> list:
+    """Divide o texto em partes menores para processamento."""
+    # Se o texto for menor que o limite, retorna como uma única parte
+    if len(texto) <= max_chars:
+        return [texto]
+    
+    partes = []
+    # Divide o texto em parágrafos
+    paragrafos = re.split(r'\n+', texto)
+    
+    parte_atual = ""
+    for paragrafo in paragrafos:
+        # Se adicionar este parágrafo exceder o limite
+        if len(parte_atual) + len(paragrafo) > max_chars and parte_atual:
+            partes.append(parte_atual)
+            parte_atual = paragrafo
+        else:
+            if parte_atual:
+                parte_atual += "\n\n" + paragrafo
+            else:
+                parte_atual = paragrafo
+    
+    # Adiciona a última parte se não estiver vazia
+    if parte_atual:
+        partes.append(parte_atual)
+    
+    return partes
+
+async def converter_texto_para_audio(texto: str, voz: str, caminho_saida: str) -> bool:
+    """Converte texto para áudio usando Edge TTS."""
+    try:
+        communicate = edge_tts.Communicate(texto, voz)
+        await communicate.save(caminho_saida)
+        return True
+    except Exception as e:
+        print(f"\n❌ Erro na conversão: {str(e)}")
+        return False
+
+async def iniciar_conversao() -> None:
+    """Inicia o processo de conversão de texto para áudio."""
+    # Seleciona o arquivo
+    caminho_arquivo = selecionar_arquivo()
+    if not caminho_arquivo:
+        return
+    
+    # Seleciona a voz
+    voz_escolhida = menu_vozes()
+    if voz_escolhida is None:
+        return
+    
+    # Lê o conteúdo do arquivo
+    texto = ler_arquivo_texto(caminho_arquivo)
+    if not texto:
+        print("\n❌ Arquivo vazio ou ilegível")
+        input("\nPressione ENTER para continuar...")
+        return
+    
+    # Processa o texto
+    texto_processado = processar_texto(texto)
+    
+    # Divide o texto em partes menores
+    partes = dividir_texto(texto_processado)
+    total_partes = len(partes)
+    
+    print(f"\n📊 Texto dividido em {total_partes} parte(s)")
+    
+    # Cria o diretório de saída
+    nome_base = os.path.splitext(os.path.basename(caminho_arquivo))[0]
+    nome_base = limpar_nome_arquivo(nome_base)
+    diretorio_saida = os.path.join(os.path.dirname(caminho_arquivo), f"{nome_base}_audio")
+    
+    if not os.path.exists(diretorio_saida):
+        os.makedirs(diretorio_saida)
+    
+    # Verifica se há progresso anterior
+    arquivo_progresso = os.path.join(diretorio_saida, ".progresso")
+    indice_inicial = ler_progresso(arquivo_progresso)
+    
+    if indice_inicial > 0 and indice_inicial < total_partes:
+        print(f"\n🔄 Retomando conversão a partir da parte {indice_inicial + 1} de {total_partes}")
+        continuar = obter_opcao("Continuar de onde parou? (s/n): ", ['s', 'n'])
+        if continuar == 'n':
+            indice_inicial = 0
+    
+    # Processa cada parte do texto
+    for i in range(indice_inicial, total_partes):
+        parte = partes[i]
+        print(f"\n🔊 Convertendo parte {i + 1} de {total_partes}...")
+        
+        # Define o caminho do arquivo de saída
+        caminho_saida = os.path.join(diretorio_saida, f"{nome_base}_parte_{i+1}.mp3")
+        
+        # Converte o texto para áudio
+        sucesso = await converter_texto_para_audio(parte, voz_escolhida, caminho_saida)
+        
+        if sucesso:
+            print(f"✅ Parte {i + 1} concluída: {caminho_saida}")
+            # Salva o progresso
+            gravar_progresso(arquivo_progresso, i + 1)
+        else:
+            print(f"❌ Falha ao processar parte {i + 1}")
+            input("\nPressione ENTER para continuar...")
+            return
+    
+    print(f"\n🎉 Conversão concluída! Arquivos salvos em: {diretorio_saida}")
+    input("\nPressione ENTER para continuar...")
+
+# Atualiza a função main para chamar a função de conversão
+async def main() -> None:
+    """Função principal do programa."""
+    while True:
+        opcao = menu_principal()
+        
+        if opcao == '1':  # INICIAR
+            await iniciar_conversao()
+            
+        elif opcao == '2':  # VOZES
+            while True:
+                voz_escolhida = menu_vozes()
+                if voz_escolhida is None:
+                    break
+                print(f"\n🎙️ Testando voz: {voz_escolhida}")
+                await testar_voz(voz_escolhida)
+                input("\nPressione ENTER para continuar...")
+                
+        elif opcao == '3':  # AJUDA
             exibir_ajuda()
-        elif opcao == '4':
+            
+        elif opcao == '4':  # ATUALIZAR
             atualizar_script()
-        elif opcao == '5':
-            atualizar_script(finalizar_apos=True)
-        elif opcao == '6':
-            print("\n👋 Obrigado por usar o Conversor TTS Lite!")
+            
+        elif opcao == '5':  # SAIR
+            print("\n👋 Obrigado por usar o Conversor TTS!")
             break
 
-if __name__ == '__main__':
-    asyncio.run(main())
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("\n\n⚠️ Programa interrompido pelo usuário.")
+    except Exception as e:
+        print(f"\n❌ Erro inesperado: {str(e)}")
