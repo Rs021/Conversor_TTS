@@ -136,9 +136,23 @@ def verificar_dependencias() -> None:
         'langdetect': 'langdetect',
         'unidecode': 'unidecode',
         'num2words': 'num2words',
+        'fitz': 'PyMuPDF',  # Adicionando PyMuPDF para conversão de PDF
     }
     for nome_pkg, pip_nome in dependencias_python.items():
         instalar_dependencia_python(nome_pkg, pip_nome)
+
+    # Verifica e instala o pdftotext (poppler) no Termux
+    if is_termux:
+        instalar_dependencia_termux('poppler')
+    else:
+        # Verifica se o pdftotext está disponível no sistema
+        try:
+            subprocess.run(['pdftotext', '-v'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            print("✅ pdftotext (poppler) já está instalado")
+        except FileNotFoundError:
+            print("⚠️ pdftotext não encontrado. Por favor, instale o pacote poppler-utils no seu sistema.")
+            print("💡 Em sistemas Linux: sudo apt-get install poppler-utils")
+            print("💡 Em sistemas Windows: Instale via https://blog.alivate.com.au/poppler-windows/")
 
 # Executa a verificação de dependências antes de importar módulos de terceiros
 verificar_dependencias()
