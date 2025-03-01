@@ -119,12 +119,18 @@ python conversor_tts_lite.py
 ## 📂 Como Funciona
 
  1.	Crie um arquivo de texto (.txt) com o conteúdo que deseja converter.
-	2.	Salve esse arquivo na pasta Downloads.
+
+	2.	Salve esse arquivo na pasta Download.
+
 	3.	Execute o script.
+
 	4.	Escolha INICIAR no menu principal.
+
 	5.	Selecione o arquivo de texto.
+
 	6.	Escolha a voz.
-	7.	O áudio será criado na pasta Downloads.
+
+	7.	O áudio será criado na pasta Download.
 
 ## 🎙️ Vozes Disponíveis
 
@@ -136,16 +142,25 @@ Antonio	Masculina	Voz clara e objetiva
 
 ## 🛠️ Recursos Avançados
 
- •	📜 Processamento inteligente de texto:
-	•	Conversão de números: “123” vira “cento e vinte e três”
-	•	Ordinais: “1º” vira “primeiro”
-	•	Números romanos: “Capítulo IV” vira “Capítulo 4”
-	•	Abreviações: “Dr.” vira “Doutor”
-	•	Símbolos: “%” vira “porcento”, “&” vira “e”
-	•	🔄 Controle de conversão:
-	•	Pausar e retomar (em caso de interrupção)
-	•	Escolha entre um único arquivo ou múltiplos arquivos (um por parágrafo)
-	•	Salvamento automático
+### •	📜 Processamento inteligente de texto:
+
+ •	Conversão de números: “123” vira “cento e vinte e três”
+
+ •	Ordinais: “1º” vira “primeiro”
+
+ •	Números romanos: “Capítulo IV” vira “Capítulo 4”
+
+ •	Abreviações: “Dr.” vira “Doutor”
+
+ •	Símbolos: “%” vira “porcento”, “&” vira “e”
+	
+### •	🔄 Controle de conversão:
+
+ •	Pausar e retomar (em caso de interrupção)
+
+ •	Escolha entre um único arquivo ou múltiplos arquivos (um por parágrafo)
+
+ •	Salvamento automático
 
 ## ❓ Problemas Comuns e Soluções
 
