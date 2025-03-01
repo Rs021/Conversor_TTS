@@ -182,21 +182,21 @@ Antonio	(voz clara e objetiva)
 
 ## ❓ Problemas Comuns e Soluções
 
-Módulo não encontrado: Falta de dependência - Refaça o comando `pip install`.
+- **Módulo não encontrado: Falta de dependência - Refaça o comando `pip install`.**
 
-Arquivo não encontrado: Caminho errado ou permissão -	No Termux, execute: `termux-setup-storage`.
+- **Arquivo não encontrado: Caminho errado ou permissão -	No Termux, execute: `termux-setup-storage`.**
 
-Áudio incompleto:	Interrupção durante conversão -	Rode novamente o script para continuar.
+- **Áudio incompleto:	Interrupção durante conversão -	Rode novamente o script para continuar.**
 
 ## 🔗 Links Úteis
 
-Repositório Oficial	[Acessar](https://github.com/JonJonesBR/Conversor_TTS)
+- **Repositório Oficial	[Acessar](https://github.com/JonJonesBR/Conversor_TTS)**
 
-Python para Windows	[Baixar](https://www.python.org/downloads/)
+- **Python para Windows	[Baixar](https://www.python.org/downloads/)**
 
-Termux (F-Droid)	[Baixar](https://f-droid.org/packages/com.termux/)
+- **Termux (F-Droid)	[Baixar](https://f-droid.org/packages/com.termux/)**
 
-Termux (GitHub)	[Baixar](https://github.com/termux/termux-app/releases)
+- **Termux (GitHub)	[Baixar](https://github.com/termux/termux-app/releases)**
 
 ## 📄 Licença
 
