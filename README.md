@@ -16,6 +16,8 @@ Um script simples e eficiente para converter textos em arquivos de áudio (MP3),
 
 - 🔢 **Conversão automática de números, ordinais e romanos para texto**
 
+- 📄 **Conversão automática de arquivos PDF para texto**
+
 - 📝 **Expansão de abreviações e símbolos especiais**
 
 - ⏸️ **Pausa e retomada automática em caso de interrupção**
@@ -25,6 +27,16 @@ Um script simples e eficiente para converter textos em arquivos de áudio (MP3),
 - 💾 **Salvamento automático na pasta Downloads**
 
 ---
+
+## 🗂️ Suporte a Arquivos PDF
+
+- **O script é capaz de detectar automaticamente se o arquivo selecionado é um PDF. Quando isso acontece, ele converte o conteúdo do PDF para .txt automaticamente, permitindo que o conteúdo seja lido pelo mecanismo TTS sem necessidade de ferramentas externas.**
+
+- **PDFs escaneados (imagem) não são suportados.**
+
+- **PDFs textuais (gerados por editores) funcionam normalmente.**
+
+- **O arquivo .txt resultante é salvo automaticamente na mesma pasta**
 
 # ⚙️ Passo a Passo de Instalação e Uso
 
@@ -126,19 +138,17 @@ python conversor_tts_lite.py
 ```
 ## 📂 Como Funciona
 
-  1.	Crie um arquivo de texto (.txt) com o conteúdo que deseja converter.
+  1.	Coloque seu arquivo (TXT ou PDF) na pasta Downloads.
 
-  2.	Salve esse arquivo na pasta Download.
+  2.	Execute o script.
 
-  3.	Execute o script.
+  3.	Escolha INICIAR no menu principal.
 
-  4.	Escolha INICIAR no menu principal.
+  4.	Selecione o arquivo de texto.
 
-  5.	Selecione o arquivo de texto.
+  5.	Escolha a voz.
 
-  6.	Escolha a voz.
-
-  7.	O áudio será criado na pasta Download.
+  6.	O áudio será criado na pasta Download.
 
 ## 🎙️ Vozes Disponíveis
 
@@ -167,6 +177,8 @@ Antonio	(voz clara e objetiva)
  •	Escolha entre um único arquivo ou múltiplos arquivos (um por parágrafo)
 
  •	Salvamento automático
+
+## 📄 Conversão de PDF para TXT integrada
 
 ## ❓ Problemas Comuns e Soluções
 
