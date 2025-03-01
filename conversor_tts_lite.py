@@ -10,7 +10,7 @@ import select
 import platform
 import zipfile
 import shutil
-import time  # Usado para medir os tempos de conversão
+import time  # Usado para medir tempos
 
 # =============================================================================
 # GARANTINDO O MÓDULO REQUESTS
@@ -32,11 +32,9 @@ VOZES_PT_BR = [
     "pt-BR-AntonioNeural"
 ]
 
-# Diretórios e configurações de encoding e buffer
 ENCODINGS_TENTATIVAS = ['utf-8', 'utf-16', 'iso-8859-1', 'cp1252']
 BUFFER_IO = 32768
 
-# Global para interrupção via sinal (Ctrl+C)
 interrupcao_requisitada = False
 
 # =============================================================================
@@ -52,7 +50,6 @@ def detectar_sistema():
         'linux': False,
         'macos': False,
     }
-    
     if sistema['nome'] == 'windows':
         sistema['windows'] = True
         return sistema
@@ -460,6 +457,30 @@ def limpar_nome_arquivo(nome: str) -> str:
     return nome_limpo
 
 # =============================================================================
+# FUNÇÃO PARA UNIFICAR ARQUIVOS DE ÁUDIO
+# =============================================================================
+def unificar_audio(temp_files, arquivo_final) -> bool:
+    """Une os arquivos de áudio temporários em um único arquivo final."""
+    try:
+        if shutil.which("ffmpeg"):
+            list_file = os.path.join(os.path.dirname(arquivo_final), "file_list.txt")
+            with open(list_file, "w") as f:
+                for temp in temp_files:
+                    f.write(f"file '{os.path.abspath(temp)}'\n")
+            subprocess.run(["ffmpeg", "-f", "concat", "-safe", "0", "-i", list_file, "-c", "copy", arquivo_final], check=True)
+            os.remove(list_file)
+        else:
+            # Fallback: concatenação binária (pode não funcionar perfeitamente para mp3)
+            with open(arquivo_final, "wb") as outfile:
+                for temp in temp_files:
+                    with open(temp, "rb") as infile:
+                        outfile.write(infile.read())
+        return True
+    except Exception as e:
+        print(f"❌ Erro na unificação dos arquivos: {e}")
+        return False
+
+# =============================================================================
 # FUNÇÕES DE ATUALIZAÇÃO
 # =============================================================================
 def atualizar_script() -> None:
@@ -569,14 +590,12 @@ def exibir_ajuda() -> None:
    - Mudar para outro diretório usando a opção 'D'
    - Digitar o caminho completo manualmente usando a opção 'M'
 4. Escolha uma das vozes disponíveis
-5. Aguarde a conversão ser concluída
+5. Aguarde a conversão ser concluída e a unificação dos chunks em um único arquivo mp3
 
 ⚠️ OBSERVAÇÕES:
-• O texto será dividido automaticamente em partes menores
-• Números e abreviações serão convertidos automaticamente
-• O progresso é salvo em caso de interrupção
-• Os arquivos de áudio serão salvos na mesma pasta do texto
-• Arquivos PDF serão convertidos automaticamente para TXT
+• O texto é dividido automaticamente em chunks menores para acelerar a conversão
+• Uma barra de progresso indica o andamento, tempo restante e velocidade de conversão
+• Ao final, os arquivos temporários são unificados em um único mp3 e removidos
 """)
     input("\nPressione ENTER para voltar ao menu principal...")
 
@@ -788,8 +807,28 @@ async def converter_texto_para_audio(texto: str, voz: str, caminho_saida: str) -
         print(f"\n❌ Erro na conversão: {str(e)}")
         return False
 
+def unificar_audio(temp_files, arquivo_final) -> bool:
+    """Une os arquivos de áudio temporários em um único arquivo final."""
+    try:
+        if shutil.which("ffmpeg"):
+            list_file = os.path.join(os.path.dirname(arquivo_final), "file_list.txt")
+            with open(list_file, "w") as f:
+                for temp in temp_files:
+                    f.write(f"file '{os.path.abspath(temp)}'\n")
+            subprocess.run(["ffmpeg", "-f", "concat", "-safe", "0", "-i", list_file, "-c", "copy", arquivo_final], check=True)
+            os.remove(list_file)
+        else:
+            with open(arquivo_final, "wb") as outfile:
+                for temp in temp_files:
+                    with open(temp, "rb") as infile:
+                        outfile.write(infile.read())
+        return True
+    except Exception as e:
+        print(f"❌ Erro na unificação dos arquivos: {e}")
+        return False
+
 async def iniciar_conversao() -> None:
-    """Inicia o processo de conversão de texto para áudio com barra de progresso."""
+    """Inicia o processo de conversão de texto para áudio com barra de progresso e unificação."""
     caminho_arquivo = selecionar_arquivo()
     if not caminho_arquivo:
         return
@@ -810,21 +849,23 @@ async def iniciar_conversao() -> None:
     diretorio_saida = os.path.join(os.path.dirname(caminho_arquivo), f"{nome_base}_audio")
     if not os.path.exists(diretorio_saida):
         os.makedirs(diretorio_saida)
-    arquivo_progresso = os.path.join(diretorio_saida, ".progresso")
-    indice_inicial = ler_progresso(arquivo_progresso)
+    # Lista para os arquivos temporários
+    temp_files = []
+    # Variáveis para medição de tempo
     durations = []
     overall_start = time.time()
-    for i, parte in enumerate(partes[indice_inicial:], start=indice_inicial + 1):
-        print(f"\n🔊 Convertendo parte {i} de {total_partes}...")
+    for i, parte in enumerate(partes, start=1):
+        sys.stdout.write(f"\r🔊 Convertendo parte {i}/{total_partes} ...")
+        sys.stdout.flush()
         chunk_start = time.time()
-        caminho_saida_parte = os.path.join(diretorio_saida, f"{nome_base}_parte_{i}.mp3")
-        sucesso = await converter_texto_para_audio(parte, voz_escolhida, caminho_saida_parte)
+        temp_file = os.path.join(diretorio_saida, f"{nome_base}_temp_{i:03d}.mp3")
+        sucesso = await converter_texto_para_audio(parte, voz_escolhida, temp_file)
         chunk_duration = time.time() - chunk_start
         durations.append(chunk_duration)
         if sucesso:
-            gravar_progresso(arquivo_progresso, i)
+            temp_files.append(temp_file)
         else:
-            print(f"❌ Falha ao processar parte {i}")
+            print(f"\n❌ Falha ao processar parte {i}")
             input("\nPressione ENTER para continuar...")
             return
         avg_time = sum(durations) / len(durations)
@@ -834,9 +875,19 @@ async def iniciar_conversao() -> None:
         bar_length = 30
         filled_length = int(round(bar_length * i / total_partes))
         bar = '#' * filled_length + '-' * (bar_length - filled_length)
-        print(f"Progresso: |{bar}| {progress_percent:.1f}% | Tempo restante estimado: {est_time:.1f} s | Velocidade: {1/avg_time:.2f} chunks/s")
+        sys.stdout.write(f"\rProgresso: |{bar}| {progress_percent:.1f}% | Tempo restante: {est_time:.1f} s | Velocidade: {1/avg_time:.2f} chunks/s")
+        sys.stdout.flush()
     overall_time = time.time() - overall_start
-    print(f"\n🎉 Conversão concluída em {overall_time:.1f} s! Arquivos salvos em: {diretorio_saida}")
+    sys.stdout.write("\n")
+    # Unificação dos arquivos temporários em um único mp3
+    arquivo_final = os.path.join(diretorio_saida, f"{nome_base}.mp3")
+    print("\n🔄 Unificando arquivos...")
+    if unificar_audio(temp_files, arquivo_final):
+        for f in temp_files:
+            os.remove(f)
+        print(f"\n🎉 Conversão concluída em {overall_time:.1f} s! Arquivo final: {arquivo_final}")
+    else:
+        print("\n❌ Falha na unificação dos arquivos.")
     input("\nPressione ENTER para continuar...")
 
 async def main() -> None:
@@ -852,7 +903,6 @@ async def main() -> None:
                     break
                 print(f"\n🎙️ Testando voz: {voz_escolhida}")
                 await testar_voz(voz_escolhida)
-                # Retorna automaticamente ao menu sem aguardar input
         elif opcao == '3':
             exibir_ajuda()
         elif opcao == '4':
