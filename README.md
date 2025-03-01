@@ -126,19 +126,19 @@ python conversor_tts_lite.py
 ```
 ## 📂 Como Funciona
 
- 1.	Crie um arquivo de texto (.txt) com o conteúdo que deseja converter.
+  1.	Crie um arquivo de texto (.txt) com o conteúdo que deseja converter.
 
-	2.	Salve esse arquivo na pasta Download.
+  2.	Salve esse arquivo na pasta Download.
 
-	3.	Execute o script.
+  3.	Execute o script.
 
-	4.	Escolha INICIAR no menu principal.
+  4.	Escolha INICIAR no menu principal.
 
-	5.	Selecione o arquivo de texto.
+  5.	Selecione o arquivo de texto.
 
-	6.	Escolha a voz.
+  6.	Escolha a voz.
 
-	7.	O áudio será criado na pasta Download.
+  me 7.	O áudio será criado na pasta Download.
 
 ## 🎙️ Vozes Disponíveis
 
@@ -179,11 +179,13 @@ Arquivo não encontrado	Caminho errado ou permissão	No Termux, execute: termux-
 
 ## 🔗 Links Úteis
 
-Recurso	Link
-Repositório Oficial	Acessar
-Python para Windows	Baixar
-Termux (F-Droid)	Baixar
-Termux (GitHub)	Baixar
+Repositório Oficial	[Acessar](https://github.com/JonJonesBR/Conversor_TTS)
+
+Python para Windows	[Baixar](https://www.python.org/downloads/)
+
+Termux (F-Droid)	[Baixar](https://f-droid.org/packages/com.termux/)
+
+Termux (GitHub)	[Baixar](https://github.com/termux/termux-app/releases)
 
 ## 📄 Licença
 
