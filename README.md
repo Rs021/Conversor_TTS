@@ -7,13 +7,21 @@ Um script simples e eficiente para converter textos em arquivos de áudio (MP3),
 ## ✨ Funcionalidades
 
 - ✅ **Compatível com Windows, Linux e Termux (Android)**
+
 - 🎙️ **Três vozes diferentes em português brasileiro**
+
 - 📜 **Suporte a textos longos com divisão automática**
+
 - 🔍 **Detecção automática de idioma e aviso se não for PT-BR**
+
 - 🔢 **Conversão automática de números, ordinais e romanos para texto**
+
 - 📝 **Expansão de abreviações e símbolos especiais**
+
 - ⏸️ **Pausa e retomada automática em caso de interrupção**
+
 - 📦 **Opção de gerar único arquivo ou separar por parágrafos**
+
 - 💾 **Salvamento automático na pasta Downloads**
 
 ---
@@ -142,7 +150,7 @@ Antonio	Masculina	Voz clara e objetiva
 
 ## 🛠️ Recursos Avançados
 
-### •	📜 Processamento inteligente de texto:
+### 📜 Processamento inteligente de texto:
 
  •	Conversão de números: “123” vira “cento e vinte e três”
 
@@ -154,7 +162,7 @@ Antonio	Masculina	Voz clara e objetiva
 
  •	Símbolos: “%” vira “porcento”, “&” vira “e”
 	
-### •	🔄 Controle de conversão:
+### 🔄 Controle de conversão:
 
  •	Pausar e retomar (em caso de interrupção)
 
