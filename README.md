@@ -138,15 +138,13 @@ python conversor_tts_lite.py
 
   6.	Escolha a voz.
 
-  me 7.	O áudio será criado na pasta Download.
+  7.	O áudio será criado na pasta Download.
 
 ## 🎙️ Vozes Disponíveis
 
-Nome	Gênero	Observação
-
-Thalita	Feminina	Padrão (voz otimizada)
-Francisca	Feminina	Alternativa suave
-Antonio	Masculina	Voz clara e objetiva
+Thalita (voz otimizada neural)
+Francisca	(voz alternativa suave)
+Antonio	(voz clara e objetiva)
 
 ## 🛠️ Recursos Avançados
 
@@ -172,10 +170,11 @@ Antonio	Masculina	Voz clara e objetiva
 
 ## ❓ Problemas Comuns e Soluções
 
-Problema	Causa	Solução
-Módulo não encontrado	Falta de dependência	Refaça o comando pip install
-Arquivo não encontrado	Caminho errado ou permissão	No Termux, execute: termux-setup-storage
-Áudio incompleto	Interrupção durante conversão	Rode novamente para continuar
+Módulo não encontrado: Falta de dependência - Refaça o comando pip install
+
+Arquivo não encontrado: Caminho errado ou permissão -	No Termux, execute: termux-setup-storage
+
+Áudio incompleto:	Interrupção durante conversão -	Rode novamente para continuar
 
 ## 🔗 Links Úteis
 
