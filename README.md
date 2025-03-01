@@ -69,7 +69,7 @@ python3 conversor_tts_lite.py
 
 Baixe a versão atualizada:
 
-	•	Termux no F-Droid
+ •	[Termux no F-Droid](https://f-droid.org/packages/com.termux/)
 	•	Termux no GitHub
 
 ### 2️⃣ Preparar o Termux
@@ -94,7 +94,7 @@ python conversor_tts_lite.py
 ```
 ## 📂 Como Funciona
 
-	1.	Crie um arquivo de texto (.txt) com o conteúdo que deseja converter.
+ 1.	Crie um arquivo de texto (.txt) com o conteúdo que deseja converter.
 	2.	Salve esse arquivo na pasta Downloads.
 	3.	Execute o script.
 	4.	Escolha INICIAR no menu principal.
@@ -112,7 +112,7 @@ Antonio	Masculina	Voz clara e objetiva
 
 ## 🛠️ Recursos Avançados
 
-	•	📜 Processamento inteligente de texto:
+ •	📜 Processamento inteligente de texto:
 	•	Conversão de números: “123” vira “cento e vinte e três”
 	•	Ordinais: “1º” vira “primeiro”
 	•	Números romanos: “Capítulo IV” vira “Capítulo 4”
