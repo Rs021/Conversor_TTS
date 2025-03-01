@@ -118,6 +118,7 @@ termux-setup-storage
 apt update && apt upgrade -y
 apt install python git -y
 ```
+- **Se for perguhtado alguma coisa, basta digitar y no terminal e Enter**
 
 ### 3️⃣ Baixar o Script
 
