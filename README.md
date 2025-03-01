@@ -88,7 +88,7 @@ wget -O conversor_tts_lite.py https://raw.githubusercontent.com/JonJonesBR/Conve
 ```bash
 pip install edge-tts langdetect unidecode num2words chardet requests
 ```
-###5️⃣ Executar o Script
+### 5️⃣ Executar o Script
 ```bash
 python conversor_tts_lite.py
 ```
