@@ -1,195 +1,151 @@
-# Conversor TTS (Text-to-Speech)
+# Conversor TTS Lite – Texto para Fala em Português Brasileiro (PT-BR)
 
-Um conversor de texto para áudio em português brasileiro, utilizando a tecnologia Edge TTS. Este script oferece uma interface amigável e recursos avançados para converter textos em arquivos de áudio com qualidade profissional.
+Um script simples e eficiente para converter textos em arquivos de áudio (MP3), utilizando a tecnologia **Edge TTS** da Microsoft. Compatível com **Windows**, **Linux** e **Android (via Termux)**, este projeto foi desenvolvido para facilitar a conversão de textos longos em áudio de alta qualidade.
 
-## ✨ Características
+---
 
-- 🎯 **Interface intuitiva e interativa**
+## ✨ Funcionalidades
+
+- ✅ **Compatível com Windows, Linux e Termux (Android)**
 - 🎙️ **Três vozes diferentes em português brasileiro**
 - 📜 **Suporte a textos longos com divisão automática**
 - 🔍 **Detecção automática de idioma e aviso se não for PT-BR**
 - 🔢 **Conversão automática de números, ordinais e romanos para texto**
-- 🎭 **Correção de pronúncia e substituição de abreviações**
-- 🛠️ **Processamento otimizado para melhor entonação e pausas**
-- ⏸️ **Pausa e retomada da conversão em caso de interrupção**
-- 📦 **Opção de unificar ou manter arquivos de áudio separados**
-- 🚀 **Execução eficiente usando o Termux no Android e no Linux**
+- 📝 **Expansão de abreviações e símbolos especiais**
+- ⏸️ **Pausa e retomada automática em caso de interrupção**
+- 📦 **Opção de gerar único arquivo ou separar por parágrafos**
+- 💾 **Salvamento automático na pasta Downloads**
 
 ---
 
-## 📋 Pré-requisitos
+# ⚙️ Passo a Passo de Instalação e Uso
 
-Para utilizar este conversor de texto para fala no Android, você precisará instalar o **Termux** e conceder as permissões necessárias. No Linux, basta instalar o Python.
+## 🪟 Windows
 
-### 🟢 Android (com Termux)
+### 1️⃣ Instalar Python
+Baixe e instale o Python (3.6 ou superior):  
+[Download Python](https://www.python.org/downloads/)
 
-1. **Baixe e instale o Termux** (não use a versão da Play Store, pois está desatualizada):
-   - **[Baixar Termux (F-Droid)](https://f-droid.org/packages/com.termux/)**
-   - **[Baixar Termux (GitHub)](https://github.com/termux/termux-app/releases)**
+### 2️⃣ Baixar o Script
+Baixe o arquivo `conversor_tts_lite.py` do repositório:  
+[Baixar Script](https://github.com/JonJonesBR/Conversor_TTS)
 
-2. **Após instalar o Termux, execute os seguintes comandos:**
+### 3️⃣ Instalar Dependências
+Abra o **Prompt de Comando** (Windows + R → `cmd`) e digite:
 ```bash
-   termux-setup-storage  # Concede acesso ao armazenamento
-   
-   apt update && apt upgrade -y  # Atualiza os pacotes do Termux
-   
-   apt install python git -y  # Instala Python e Git
+pip install edge-tts langdetect unidecode num2words chardet requests
 ```
-### Caso durante a instalação pergunte algo, basta digitar y.
+### 4️⃣ Executar o Script
 
-### 🔵 Linux
-
-Apenas certifique-se de que o Python 3.6 ou superior está instalado:
-
+Navegue até a pasta onde salvou o script (ex.: Downloads):
 ```bash
-   sudo apt update && sudo apt install python3 python3-pip git -y
+cd Downloads
+
+python conversor_tts_lite.py
 ```
+## 🐧 Linux
 
-## 🚀 Instalação do Conversor TTS
+### 1️⃣ Instalar Python e Git
 
-### 1.	Baixe o script no seu Termux:
+No terminal, digite:
 ```bash
-   curl -o conversor_tts_lite.py https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/conversor_tts_lite.py
+sudo apt update && sudo apt install python3 python3-pip git -y
 ```
-   OU
+### 2️⃣ Baixar o Script
 ```bash
-   wget -O conversor_tts_lite.py https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/conversor_tts_lite.py 
+wget -O conversor_tts_lite.py https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/conversor_tts_lite.py
 ```
-### 2. Confirme se o script foi baixado com sucesso:
+### 3️⃣ Instalar Dependências
 ```bash
-   ls
+pip3 install edge-tts langdetect unidecode num2words chardet requests
 ```
-   #### ✅ Se aparecer a mensagem conversor_tts_lite.py o aquivo foi baixado!
-   #### ❌ Se o nome conversor_tts_lite.py não aparecer, refaça o passo 1!
+### 4️⃣ Executar o Script
+```bash
+python3 conversor_tts_lite.py
+```
+## 📱 Android (Termux)
 
-### 3. Instale as dependências necessárias: 
+### 1️⃣ Instalar Termux
 
-	pip install edge-tts langdetect unidecode num2words chardet && python -m pip install --user requests
+Baixe a versão atualizada:
 
-## 💻 Como Usar
+	•	Termux no F-Droid
+	•	Termux no GitHub
 
-### 1. Execute o script: 
+### 2️⃣ Preparar o Termux
 
-	python conversor_tts_lite.py
+Após abrir o Termux, rode:
+```bash
+termux-setup-storage
+apt update && apt upgrade -y
+apt install python git -y
+```
+### 3️⃣ Baixar o Script
+```bash
+wget -O conversor_tts_lite.py https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/conversor_tts_lite.py
+```
+### 4️⃣ Instalar Dependências
+```bash
+pip install edge-tts langdetect unidecode num2words chardet requests
+```
+###5️⃣ Executar o Script
+```bash
+python conversor_tts_lite.py
+```
+## 📂 Como Funciona
 
-### 2.	No menu principal, você terá as seguintes opções:
-
-   •	🚀 INICIAR: Começa o processo de conversão
-   
-   •	🎙️ VOZES: Testa as vozes disponíveis
-	
-   •	❓ AJUDA: Exibe o guia de uso
-	
-   •	🚪 SAIR: Encerra o programa
-
-### 3.	Para converter um texto:
-
-   •	Salve seu texto em um arquivo .txt
-	
-   •	Coloque o arquivo na pasta Downloads
-	
-   •	Escolha a opção INICIAR
-	
-   •	Selecione o arquivo de texto
-	
-   •	Escolha a voz desejada
-	
-   •	Aguarde a conversão
+	1.	Crie um arquivo de texto (.txt) com o conteúdo que deseja converter.
+	2.	Salve esse arquivo na pasta Downloads.
+	3.	Execute o script.
+	4.	Escolha INICIAR no menu principal.
+	5.	Selecione o arquivo de texto.
+	6.	Escolha a voz.
+	7.	O áudio será criado na pasta Downloads.
 
 ## 🎙️ Vozes Disponíveis
 
-   •	Thalita (padrão) - Otimizada para múltiplos idiomas
-	
-   •	Francisca - Voz feminina alternativa
-	
-   •	Antonio - Voz masculina
+Nome	Gênero	Observação
+
+Thalita	Feminina	Padrão (voz otimizada)
+Francisca	Feminina	Alternativa suave
+Antonio	Masculina	Voz clara e objetiva
 
 ## 🛠️ Recursos Avançados
 
-### 📜 Processamento Inteligente
+	•	📜 Processamento inteligente de texto:
+	•	Conversão de números: “123” vira “cento e vinte e três”
+	•	Ordinais: “1º” vira “primeiro”
+	•	Números romanos: “Capítulo IV” vira “Capítulo 4”
+	•	Abreviações: “Dr.” vira “Doutor”
+	•	Símbolos: “%” vira “porcento”, “&” vira “e”
+	•	🔄 Controle de conversão:
+	•	Pausar e retomar (em caso de interrupção)
+	•	Escolha entre um único arquivo ou múltiplos arquivos (um por parágrafo)
+	•	Salvamento automático
 
-   •	🔢 Números para texto (ex.: “1234” → “mil duzentos e trinta e quatro”)
-	
-   •	🏆 Números ordinais (ex.: “1º” → “primeiro”)
-	
-   •	🏛️ Números romanos (ex.: “Capítulo IV” → “Capítulo 4”)
-	
-   •	📝 Abreviações expandidas (ex.: “Dr.” → “Doutor”, “Sr.” → “Senhor”)
-	
-   •	🔣 Substituições especiais (ex.: “% → porcento”, “& → e”)
+## ❓ Problemas Comuns e Soluções
 
-## 🔄 Controle de Conversão
-
-   •	⏸️ Pausar e retomar: Se interrompido, o progresso é salvo
-	
-   •	📦 Escolha do formato de saída: Unificar áudio ou manter arquivos separados
-	
-   •	🛑 Interrupção segura: Pressione Ctrl+C para interromper e decidir o que fazer com os arquivos gerados
-
-## 🚀 Recursos e Funcionalidades
-
-### 📂 Processamento de Arquivos
-   • Leitura automática de arquivos com detecção inteligente de encoding
-   • Suporte para conversão de PDF para texto
-   • Detecção automática do ambiente (Termux/Desktop)
-
-### 🔍 Otimização de Texto
-   • Verificação automática de idioma português
-   • Conversão inteligente de números e símbolos
-   • Ajuste dinâmico de pausas para melhor entonação
-   • Tratamento especial para abreviações e caracteres especiais
-
-### 💾 Gerenciamento de Progresso
-   • Salvamento automático do progresso de conversão
-   • Capacidade de retomar conversões interrompidas
-   • Opção de manter arquivos parciais ou unificados
-
-### 🎛️ Controle e Personalização
-   • Múltiplas vozes disponíveis em português
-   • Estrutura modular para fácil personalização
-   • Interrupção segura da conversão (Ctrl+C ou 'q')
-   • Opções flexíveis para gerenciamento de arquivos
+Problema	Causa	Solução
+Módulo não encontrado	Falta de dependência	Refaça o comando pip install
+Arquivo não encontrado	Caminho errado ou permissão	No Termux, execute: termux-setup-storage
+Áudio incompleto	Interrupção durante conversão	Rode novamente para continuar
 
 ## 🔗 Links Úteis
 
-   •	📥 Baixar Termux (F-Droid): [Clique aqui](https://f-droid.org/packages/com.termux/)
-	
-   •	📥 Baixar Termux (GitHub): [Clique aqui](https://github.com/termux/termux-app/releases)
-	
-   •	📚 Guia oficial do Termux: [Leia aqui](https://wiki.termux.com/wiki/Main_Page) - Traduza a página com o google tradutor no Chrome 😁
-	
-   •	🎤 Baixar o repositório deste Conversor TTS: [Clique aqui](https://github.com/JonJonesBR/Conversor_TTS/archive/refs/heads/main.zip)
+Recurso	Link
+Repositório Oficial	Acessar
+Python para Windows	Baixar
+Termux (F-Droid)	Baixar
+Termux (GitHub)	Baixar
 
-   •	🐍 Baixar o arquivo Python do Conversor TTS: [Clique aqui]()
-
-### •	🛠️ Comandos úteis do Termux:
-```bash 
-   termux-setup-storage  # Concede acesso ao armazenamento
-	
-   apt update && apt upgrade -y  # Atualiza os pacotes do Termux 
-	
-   apt install python git -y  # Instala Python e Git 
-	
-   pip install edge-tts langdetect unidecode num2words chardet  # Instala dependências 
-```
-## ⚠️ Observações
-
-   •	O arquivo de áudio será salvo na pasta de Downloads
-	
-   •	O nome do arquivo de áudio será baseado na primeira linha do texto
-	
-   •	A conversão requer conexão com a internet
-	
-   •	Para melhor compatibilidade no Termux, conceda permissões com:
-
-	termux-setup-storage  # Concede acesso ao armazenamento
-	
 ## 📄 Licença
 
-Este projeto está sob a licença MIT. Veja o arquivo LICENSE para mais detalhes.
+Este projeto é distribuído sob a licença MIT. Consulte o arquivo LICENSE para mais detalhes.
 
 ## 🤝 Contribuindo
 
-Contribuições são bem-vindas! Sinta-se à vontade para abrir uma issue ou enviar um pull request.
+Contribuições são bem-vindas! Se você encontrou um bug, tem sugestões ou deseja ajudar no desenvolvimento, abra uma issue ou envie um pull request.
 
-## ⭐ Se este projeto foi útil para você, considere dar uma estrela no GitHub
+## ⭐ Se este projeto foi útil para você, deixe sua estrela no GitHub e ajude a divulgar! ⭐
+
+Se preferir, posso criar um link externo por você (por exemplo, no [GitHub Gist](https://gist.github.com/)) e te passar esse link. Quer que eu faça isso?
