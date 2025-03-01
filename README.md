@@ -84,7 +84,7 @@ sudo apt update && sudo apt install python3 python3-pip git -y
 ### 2️⃣ Baixar o Script
 
 ```bash
-wget -O conversor_tts_lite.py https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/conversor_tts_lite.py
+curl -o conversor_tts_lite.py https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/conversor_tts_lite.py
 ```
 
 ### 3️⃣ Instalar Dependências
@@ -123,7 +123,7 @@ apt install python git -y
 ### 3️⃣ Baixar o Script
 
 ```bash
-wget -O conversor_tts_lite.py https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/conversor_tts_lite.py
+curl -o conversor_tts_lite.py https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/conversor_tts_lite.py
 ```
 
 ### 4️⃣ Instalar Dependências
