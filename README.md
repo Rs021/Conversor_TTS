@@ -138,17 +138,17 @@ python conversor_tts_lite.py
 ```
 ## 📂 Como Funciona
 
-  1.	Coloque seu arquivo (TXT ou PDF) na pasta Downloads.
+-  **1.	Coloque seu arquivo (TXT ou PDF) na pasta Downloads.**
 
-  2.	Execute o script.
+-  **2.	Execute o script.**
 
-  3.	Escolha INICIAR no menu principal.
+-  **3.	Escolha INICIAR no menu principal.**
 
-  4.	Selecione o arquivo de texto.
+-  **4.	Selecione o arquivo de texto.**
 
-  5.	Escolha a voz.
+-  **5.	Escolha a voz.**
 
-  6.	O áudio será criado na pasta Download.
+-  **6.	O áudio será criado na pasta Download.**
 
 ## 🎙️ Vozes Disponíveis
 
