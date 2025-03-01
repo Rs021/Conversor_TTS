@@ -170,11 +170,11 @@ Antonio	(voz clara e objetiva)
 
 ## ❓ Problemas Comuns e Soluções
 
-Módulo não encontrado: Falta de dependência - Refaça o comando pip install
+Módulo não encontrado: Falta de dependência - Refaça o comando `pip install`.
 
-Arquivo não encontrado: Caminho errado ou permissão -	No Termux, execute: termux-setup-storage
+Arquivo não encontrado: Caminho errado ou permissão -	No Termux, execute: `termux-setup-storage`.
 
-Áudio incompleto:	Interrupção durante conversão -	Rode novamente para continuar
+Áudio incompleto:	Interrupção durante conversão -	Rode novamente o script para continuar.
 
 ## 🔗 Links Úteis
 
