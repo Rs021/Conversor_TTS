@@ -23,46 +23,62 @@ Um script simples e eficiente para converter textos em arquivos de áudio (MP3),
 ## 🪟 Windows
 
 ### 1️⃣ Instalar Python
+
 Baixe e instale o Python (3.6 ou superior):  
 [Download Python](https://www.python.org/downloads/)
 
 ### 2️⃣ Baixar o Script
+
 Baixe o arquivo `conversor_tts_lite.py` do repositório:  
+
 [Baixar Script](https://github.com/JonJonesBR/Conversor_TTS)
 
 ### 3️⃣ Instalar Dependências
+
 Abra o **Prompt de Comando** (Windows + R → `cmd`) e digite:
+
 ```bash
 pip install edge-tts langdetect unidecode num2words chardet requests
 ```
+
 ### 4️⃣ Executar o Script
 
 Navegue até a pasta onde salvou o script (ex.: Downloads):
+
 ```bash
 cd Downloads
 
 python conversor_tts_lite.py
 ```
+
 ## 🐧 Linux
 
 ### 1️⃣ Instalar Python e Git
 
 No terminal, digite:
+
 ```bash
 sudo apt update && sudo apt install python3 python3-pip git -y
 ```
+
 ### 2️⃣ Baixar o Script
+
 ```bash
 wget -O conversor_tts_lite.py https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/conversor_tts_lite.py
 ```
+
 ### 3️⃣ Instalar Dependências
+
 ```bash
 pip3 install edge-tts langdetect unidecode num2words chardet requests
 ```
+
 ### 4️⃣ Executar o Script
+
 ```bash
 python3 conversor_tts_lite.py
 ```
+
 ## 📱 Android (Termux)
 
 ### 1️⃣ Instalar Termux
@@ -70,25 +86,33 @@ python3 conversor_tts_lite.py
 Baixe a versão atualizada:
 
  •	[Termux no F-Droid](https://f-droid.org/packages/com.termux/)
-	•	Termux no GitHub
+
+ •	[Termux no GitHub](https://github.com/termux/termux-app/releases)
 
 ### 2️⃣ Preparar o Termux
 
 Após abrir o Termux, rode:
+
 ```bash
 termux-setup-storage
 apt update && apt upgrade -y
 apt install python git -y
 ```
+
 ### 3️⃣ Baixar o Script
+
 ```bash
 wget -O conversor_tts_lite.py https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/conversor_tts_lite.py
 ```
+
 ### 4️⃣ Instalar Dependências
+
 ```bash
 pip install edge-tts langdetect unidecode num2words chardet requests
 ```
+
 ### 5️⃣ Executar o Script
+
 ```bash
 python conversor_tts_lite.py
 ```
