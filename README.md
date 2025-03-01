@@ -147,5 +147,3 @@ Este projeto é distribuído sob a licença MIT. Consulte o arquivo LICENSE para
 Contribuições são bem-vindas! Se você encontrou um bug, tem sugestões ou deseja ajudar no desenvolvimento, abra uma issue ou envie um pull request.
 
 ## ⭐ Se este projeto foi útil para você, deixe sua estrela no GitHub e ajude a divulgar! ⭐
-
-Se preferir, posso criar um link externo por você (por exemplo, no [GitHub Gist](https://gist.github.com/)) e te passar esse link. Quer que eu faça isso?
