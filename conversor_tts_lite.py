@@ -686,6 +686,21 @@ def selecionar_arquivo() -> str:
                     print("\n⚠️ Falha na conversão do PDF. Tente outro arquivo.")
                     input("\nPressione ENTER para continuar...")
                     continue
+                editar = input("\nDeseja editar o arquivo TXT gerado para melhorar a narração? (s/n): ").strip().lower()
+                if editar == 's':
+                    if sistema['android']:
+                        print("\nO arquivo TXT convertido foi salvo em seu diretório padrão (normalmente Download).")
+                        print("Após editá-lo, reinicie a conversão selecionando-o neste script pela opção 1 do menu inicial.")
+                        input("\nPressione ENTER para retornar ao menu principal...")
+                        return ''
+                    else:
+                        if sistema['windows']:
+                            os.startfile(caminho_txt)
+                        elif sistema['macos']:
+                            subprocess.Popen(["open", caminho_txt])
+                        else:
+                            subprocess.Popen(["xdg-open", caminho_txt])
+                        input("\nEdite o arquivo, salve as alterações e pressione ENTER para continuar...")
                 return caminho_txt
             elif ext == '.txt':
                 return caminho
@@ -704,6 +719,21 @@ def selecionar_arquivo() -> str:
                         print("\n⚠️ Falha na conversão do PDF. Tente outro arquivo.")
                         input("\nPressione ENTER para continuar...")
                         continue
+                    editar = input("\nDeseja editar o arquivo TXT gerado para melhorar a narração? (s/n): ").strip().lower()
+                    if editar == 's':
+                        if sistema['android']:
+                            print("\nO arquivo TXT convertido foi salvo em seu diretório padrão (normalmente Download).")
+                            print("Após editá-lo, reinicie a conversão selecionando-o neste script pela opção 1 do menu inicial.")
+                            input("\nPressione ENTER para retornar ao menu principal...")
+                            return ''
+                        else:
+                            if sistema['windows']:
+                                os.startfile(caminho_txt)
+                            elif sistema['macos']:
+                                subprocess.Popen(["open", caminho_txt])
+                            else:
+                                subprocess.Popen(["xdg-open", caminho_txt])
+                            input("\nEdite o arquivo, salve as alterações e pressione ENTER para continuar...")
                     return caminho_txt
                 else:
                     return caminho_completo
@@ -748,19 +778,44 @@ def ler_arquivo_texto(caminho_arquivo: str) -> str:
 
 def processar_texto(texto: str) -> str:
     """
-    Processa o texto para melhorar a pronúncia e entonação.
+    Processa o texto para melhorar a pronúncia e entonação, convertendo abreviações comuns para suas formas completas.
     """
     import re
     from num2words import num2words
 
     texto = re.sub(r'\s+', ' ', texto)
     abreviacoes = {
-        r'\bDr.\b': 'Doutor',
-        r'\bSr.\b': 'Senhor',
-        r'\bSra.\b': 'Senhora',
-        r'\bProf.\b': 'Professor',
-        r'\bex.\b': 'exemplo',
-        r'\betc.\b': 'etcétera',
+        r'\bDr\.\b': 'Doutor',
+        r'\bDra\.\b': 'Doutora',
+        r'\bSr\.\b': 'Senhor',
+        r'\bSra\.\b': 'Senhora',
+        r'\bSrta\.\b': 'Senhorita',
+        r'\bProf\.\b': 'Professor',
+        r'\bProfa\.\b': 'Professora',
+        r'\bEng\.\b': 'Engenheiro',
+        r'\bEngª\.\b': 'Engenheira',
+        r'\bAdm\.\b': 'Administrador',
+        r'\bAdv\.\b': 'Advogado',
+        r'\bExmo\.\b': 'Excelentíssimo',
+        r'\bExma\.\b': 'Excelentíssima',
+        r'\bV\.Exa\.\b': 'Vossa Excelência',
+        r'\bV\.Sa\.\b': 'Vossa Senhoria',
+        r'\bAv\.\b': 'Avenida',
+        r'\bR\.\b': 'Rua',
+        r'\bKm\.\b': 'Quilômetro',
+        r'\betc\.\b': 'etcétera',
+        r'\bRef\.\b': 'Referência',
+        r'\bPag\.\b': 'Página',
+        r'\bDept\.\b': 'Departamento',
+        r'\bDepto\.\b': 'Departamento',
+        r'\bUniv\.\b': 'Universidade',
+        r'\bInst\.\b': 'Instituição',
+        r'\bEst\.\b': 'Estado',
+        r'\bTel\.\b': 'Telefone',
+        r'\bCEP\.\b': 'Código de Endereçamento Postal',
+        r'\bCNPJ\.\b': 'Cadastro Nacional da Pessoa Jurídica',
+        r'\bCPF\.\b': 'Cadastro de Pessoas Físicas',
+        r'\bLtda\.\b': 'Limitada'
     }
     for abrev, expansao in abreviacoes.items():
         texto = re.sub(abrev, expansao, texto)
