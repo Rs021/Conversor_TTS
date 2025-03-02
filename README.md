@@ -45,13 +45,14 @@ Um script simples e eficiente para converter textos em arquivos de áudio (MP3),
 ### 1️⃣ Instalar Python
 
 Baixe e instale o Python (3.6 ou superior):  
+
 [Download Python](https://www.python.org/downloads/)
 
 ### 2️⃣ Baixar o Script
 
 Baixe o arquivo `conversor_tts_lite.py` do repositório:  
 
-[Baixar Script](https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/refs/heads/main/conversor_tts_lite.py/conversor_tts_lite.py/conversor_tts_lite.py/conversor_tts_lite.pytts_lite.pyheads/main/conversor_tts_lite.py)
+[Baixar Script](https://github.com/JonJonesBR/Conversor_TTS/blob/main/conversor_tts_lite.py/conversor_tts_lite.py/conversor_tts_lite.py/conversor_tts_lite.py/conversor_tts_lite.pytts_lite.pyheads/main/conversor_tts_lite.py)
 
 ### 3️⃣ Instalar Dependências
 
@@ -193,7 +194,7 @@ Antonio	(voz clara e objetiva)
 
 - **Repositório Oficial	[Acessar](https://github.com/JonJonesBR/Conversor_TTS)**
 
-- **Baixar o script diretamente [Baixar](https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/refs/heads/main/conversor_tts_lite.pylite.pyheads/main/heads/main/conversor_tts_lite.pyheads/main/conversor_tts_lite.py)
+- **Baixar o script diretamente [Baixar](https://github.com/JonJonesBR/Conversor_TTS/blob/main/conversor_tts_lite.pyheads/main/conversor_tts_lite.pylite.pyheads/main/heads/main/conversor_tts_lite.pyheads/main/conversor_tts_lite.py)
 
 - **Python para Windows	[Baixar](https://www.python.org/downloads/)**
 
