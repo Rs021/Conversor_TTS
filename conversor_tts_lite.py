@@ -10,11 +10,22 @@ import select
 import platform
 import zipfile
 import shutil
-import time  # Usado para medir tempos
+import time
 
-# =============================================================================
-# GARANTINDO O MÓDULO REQUESTS
-# =============================================================================
+# Tenta importar o tqdm; se não encontrar, instala-o e adiciona o diretório do usuário ao sys.path
+try:
+    from tqdm import tqdm
+except ModuleNotFoundError:
+    print("⚠️ Módulo 'tqdm' não encontrado. Instalando...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", "tqdm"])
+    try:
+        import site
+        site.addsitedir(site.getusersitepackages())
+    except Exception as e:
+        print(f"❌ Erro ao adicionar o diretório de pacotes do usuário: {e}")
+    from tqdm import tqdm  # Mesmo que a barra não seja usada, mantemos a instalação
+
+# Garantindo o módulo requests
 try:
     import requests
 except ModuleNotFoundError:
@@ -22,9 +33,6 @@ except ModuleNotFoundError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", "requests"])
     import requests
 
-# =============================================================================
-# CONFIGURAÇÃO E CONSTANTES
-# =============================================================================
 # Vozes disponíveis para conversão
 VOZES_PT_BR = [
     "pt-BR-ThalitaMultilingualNeural",  # Voz padrão
@@ -37,9 +45,6 @@ BUFFER_IO = 32768
 
 interrupcao_requisitada = False
 
-# =============================================================================
-# FUNÇÕES PARA DETECÇÃO DE SISTEMA OPERACIONAL
-# =============================================================================
 def detectar_sistema():
     """Detecta o sistema operacional e ambiente de execução."""
     sistema = {
@@ -74,9 +79,6 @@ def detectar_sistema():
                 os.environ['PATH'] = f"{os.environ.get('PATH', '')}:/data/data/com.termux/files/usr/bin"
     return sistema
 
-# =============================================================================
-# FUNÇÕES PARA INSTALAÇÃO DO POPPLER (Windows)
-# =============================================================================
 def instalar_poppler_windows():
     """Instala o Poppler no Windows automaticamente."""
     try:
@@ -129,9 +131,6 @@ def instalar_poppler_windows():
         print(f"❌ Erro ao instalar Poppler: {str(e)}")
         return False
 
-# =============================================================================
-# FUNÇÕES PARA CONVERSÃO DE PDF
-# =============================================================================
 def converter_pdf(caminho_pdf: str, caminho_txt: str) -> bool:
     """Converte PDF para TXT utilizando o comando pdftotext."""
     try:
@@ -188,10 +187,15 @@ def converter_pdf(caminho_pdf: str, caminho_txt: str) -> bool:
                 return False
             elif sistema['linux']:
                 if sistema['termux']:
-                    print("❌ O pdftotext não está instalado no sistema. Instale com: pkg install poppler")
+                    print("❌ O pdftotext não está instalado no sistema. Tentando instalar automaticamente com: pkg install poppler")
+                    if instalar_poppler():
+                        print("✅ Poppler instalado com sucesso! Execute novamente a conversão.")
+                    else:
+                        print("❌ Falha ao instalar poppler automaticamente.")
+                    return False
                 else:
                     print("❌ O pdftotext não está instalado no sistema. Instale com: sudo apt-get install poppler-utils")
-                return False
+                    return False
     if sistema['windows'] and pdftotext_path:
         resultado = subprocess.run(
             [pdftotext_path, "-layout", caminho_pdf, caminho_txt],
@@ -209,9 +213,6 @@ def converter_pdf(caminho_pdf: str, caminho_txt: str) -> bool:
         return False
     return True
 
-# =============================================================================
-# FUNÇÕES DE VERIFICAÇÃO DE AMBIENTE E DEPENDÊNCIAS
-# =============================================================================
 def verificar_sistema() -> dict:
     """Verifica o sistema operacional e retorna informações sobre ele."""
     print("\n🔍 Verificando ambiente de execução...")
@@ -391,13 +392,10 @@ def verificar_dependencias() -> None:
         elif sistema['macos']:
             print("❌ O pdftotext não está instalado no sistema. Instale com: brew install poppler")
         elif sistema['termux']:
-            print("❌ O pdftotext não está instalado no sistema. Instale com: pkg install poppler")
+            print("❌ O pdftotext não está instalado no sistema. Tente executar: pkg install poppler")
         else:
             print("❌ O pdftotext não está instalado no sistema. Instale com: sudo apt-get install poppler-utils")
 
-# =============================================================================
-# IMPORTAÇÃO DE MÓDULOS TERCEIRIZADOS
-# =============================================================================
 import asyncio
 import edge_tts
 from unidecode import unidecode
@@ -418,9 +416,6 @@ except ImportError:
     print("\n⚠️ O módulo langdetect não está instalado. Para instalar, execute: pip install langdetect")
     LANG_DETECT_AVAILABLE = False
 
-# =============================================================================
-# FUNÇÕES UTILITÁRIAS
-# =============================================================================
 def limpar_tela() -> None:
     """Limpa a tela do terminal de forma compatível com todos os sistemas."""
     sistema = detectar_sistema()
@@ -456,9 +451,6 @@ def limpar_nome_arquivo(nome: str) -> str:
     nome_limpo = nome_limpo.replace(' ', '_')
     return nome_limpo
 
-# =============================================================================
-# FUNÇÃO PARA UNIFICAR ARQUIVOS DE ÁUDIO
-# =============================================================================
 def unificar_audio(temp_files, arquivo_final) -> bool:
     """Une os arquivos de áudio temporários em um único arquivo final."""
     try:
@@ -480,9 +472,6 @@ def unificar_audio(temp_files, arquivo_final) -> bool:
         print(f"❌ Erro na unificação dos arquivos: {e}")
         return False
 
-# =============================================================================
-# FUNÇÕES DE ATUALIZAÇÃO
-# =============================================================================
 def atualizar_script() -> None:
     """Atualiza o script para a versão mais recente do GitHub."""
     exibir_banner()
@@ -527,8 +516,8 @@ def atualizar_script() -> None:
             print("✅ Script atualizado com sucesso!")
         print("\n🔄 O script será reiniciado para aplicar as atualizações.")
         input("Pressione ENTER para continuar...")
-        python = sys.executable
-        os.execl(python, python, script_atual)
+        python_exec = sys.executable
+        os.execl(python_exec, python_exec, script_atual)
     except Exception as e:
         print(f"\n❌ Erro durante a atualização: {str(e)}")
         print(f"\n🔄 Restaurando backup...")
@@ -540,16 +529,13 @@ def atualizar_script() -> None:
             print(f"⚠️ O backup está disponível em: {script_backup}")
         input("\nPressione ENTER para continuar...")
 
-# =============================================================================
-# FUNÇÕES DE MENU E INTERFACE
-# =============================================================================
 def exibir_banner() -> None:
     """Exibe o banner do programa."""
     limpar_tela()
     print("""
 ╔════════════════════════════════════════════╗
-║         CONVERSOR TTS - EDGE TTS          ║
-║        Text-to-Speech em PT-BR            ║
+║         CONVERSOR TTS - EDGE TTS           ║
+║        Text-to-Speech em PT-BR             ║
 ╚════════════════════════════════════════════╝
 """)
 
@@ -584,18 +570,23 @@ def exibir_ajuda() -> None:
 📖 GUIA DE USO:
 
 1. Prepare seu arquivo de texto (.txt) ou PDF (.pdf) e salve-o em um local acessível
+
 2. Escolha 'INICIAR' no menu principal
+
 3. Navegue pelos diretórios e selecione o arquivo desejado
    - Você pode escolher um arquivo da lista numerada
    - Mudar para outro diretório usando a opção 'D'
    - Digitar o caminho completo manualmente usando a opção 'M'
+
 4. Escolha uma das vozes disponíveis
+
 5. Aguarde a conversão ser concluída e a unificação dos chunks em um único arquivo mp3
 
 ⚠️ OBSERVAÇÕES:
-• O texto é dividido automaticamente em chunks menores para acelerar a conversão
-• Uma barra de progresso indica o andamento, tempo restante e velocidade de conversão
-• Ao final, os arquivos temporários são unificados em um único mp3 e removidos
+• O texto é dividido automaticamente em chunks menores para agilizar a conversão.
+• O tamanho dos chunks é ajustado dinamicamente com base no tamanho total do texto para otimizar a performance.
+• A cada chunk convertido, uma mensagem é exibida informando a parte concluída, a velocidade atual e o tempo restante estimado.
+• Ao final, os arquivos temporários são unificados em um único mp3 e removidos.
 """)
     input("\nPressione ENTER para voltar ao menu principal...")
 
@@ -604,6 +595,7 @@ async def testar_voz(voz: str) -> None:
     Testa uma voz específica com um texto de exemplo e salva a amostra
     em uma pasta na pasta Download do Android. Após a geração, retorna automaticamente.
     """
+    import edge_tts
     texto_teste = "Olá! Esta é uma demonstração da minha voz."
     communicate = edge_tts.Communicate(texto_teste, voz)
     sistema = detectar_sistema()
@@ -653,8 +645,6 @@ def selecionar_arquivo() -> str:
     if sistema['termux'] or sistema['android']:
         dir_atual = '/storage/emulated/0/Download'
     elif sistema['windows']:
-        dir_atual = os.path.join(os.path.expanduser('~'), 'Desktop')
-    elif sistema['macos']:
         dir_atual = os.path.join(os.path.expanduser('~'), 'Desktop')
     else:
         dir_atual = os.path.join(os.path.expanduser('~'), 'Desktop')
@@ -726,12 +716,13 @@ def selecionar_arquivo() -> str:
 
 def detectar_encoding(caminho_arquivo: str) -> str:
     """Detecta o encoding de um arquivo de texto."""
+    import chardet
     try:
         with open(caminho_arquivo, 'rb') as f:
             resultado = chardet.detect(f.read())
         encoding_detectado = resultado['encoding']
         if not encoding_detectado:
-            for enc in ENCODINGS_TENTATIVAS:
+            for enc in ['utf-8', 'utf-16', 'iso-8859-1', 'cp1252']:
                 try:
                     with open(caminho_arquivo, 'r', encoding=enc) as f:
                         f.read(100)
@@ -756,15 +747,20 @@ def ler_arquivo_texto(caminho_arquivo: str) -> str:
         return ""
 
 def processar_texto(texto: str) -> str:
-    """Processa o texto para melhorar a pronúncia e entonação."""
+    """
+    Processa o texto para melhorar a pronúncia e entonação.
+    """
+    import re
+    from num2words import num2words
+
     texto = re.sub(r'\s+', ' ', texto)
     abreviacoes = {
-        r'\bDr\.\b': 'Doutor',
-        r'\bSr\.\b': 'Senhor',
-        r'\bSra\.\b': 'Senhora',
-        r'\bProf\.\b': 'Professor',
-        r'\bex\.\b': 'exemplo',
-        r'\betc\.\b': 'etcétera',
+        r'\bDr.\b': 'Doutor',
+        r'\bSr.\b': 'Senhor',
+        r'\bSra.\b': 'Senhora',
+        r'\bProf.\b': 'Professor',
+        r'\bex.\b': 'exemplo',
+        r'\betc.\b': 'etcétera',
     }
     for abrev, expansao in abreviacoes.items():
         texto = re.sub(abrev, expansao, texto)
@@ -777,28 +773,34 @@ def processar_texto(texto: str) -> str:
     texto = re.sub(r'\b\d+\b', converter_numero, texto)
     return texto
 
-def dividir_texto(texto: str, max_chars: int = 2000) -> list:
-    """Divide o texto em partes menores para processamento."""
-    if len(texto) <= max_chars:
-        return [texto]
+def calcular_chunk_size(texto: str) -> int:
+    """
+    Calcula dinamicamente o tamanho do chunk (max_chars) com base no tamanho do texto.
+    Para textos pequenos, utiliza um valor padrão; para textos grandes, ajusta para ter aproximadamente 50 chunks.
+    """
+    total = len(texto)
+    if total < 1000:
+        return 100
+    else:
+        target_chunks = 50
+        # Garante um valor mínimo de 50 caracteres por chunk
+        return max(50, total // target_chunks)
+
+def dividir_texto(texto: str, max_chars: int) -> list:
+    """
+    Divide o texto em partes menores para processamento, ignorando parágrafos.
+    """
     partes = []
-    paragrafos = re.split(r'\n+', texto)
-    parte_atual = ""
-    for paragrafo in paragrafos:
-        if len(parte_atual) + len(paragrafo) > max_chars and parte_atual:
-            partes.append(parte_atual)
-            parte_atual = paragrafo
-        else:
-            if parte_atual:
-                parte_atual += "\n\n" + paragrafo
-            else:
-                parte_atual = paragrafo
-    if parte_atual:
-        partes.append(parte_atual)
+    start = 0
+    while start < len(texto):
+        end = start + max_chars
+        partes.append(texto[start:end])
+        start = end
     return partes
 
 async def converter_texto_para_audio(texto: str, voz: str, caminho_saida: str) -> bool:
     """Converte texto para áudio usando Edge TTS."""
+    import edge_tts
     try:
         communicate = edge_tts.Communicate(texto, voz)
         await communicate.save(caminho_saida)
@@ -807,87 +809,74 @@ async def converter_texto_para_audio(texto: str, voz: str, caminho_saida: str) -
         print(f"\n❌ Erro na conversão: {str(e)}")
         return False
 
-def unificar_audio(temp_files, arquivo_final) -> bool:
-    """Une os arquivos de áudio temporários em um único arquivo final."""
-    try:
-        if shutil.which("ffmpeg"):
-            list_file = os.path.join(os.path.dirname(arquivo_final), "file_list.txt")
-            with open(list_file, "w") as f:
-                for temp in temp_files:
-                    f.write(f"file '{os.path.abspath(temp)}'\n")
-            subprocess.run(["ffmpeg", "-f", "concat", "-safe", "0", "-i", list_file, "-c", "copy", arquivo_final], check=True)
-            os.remove(list_file)
-        else:
-            with open(arquivo_final, "wb") as outfile:
-                for temp in temp_files:
-                    with open(temp, "rb") as infile:
-                        outfile.write(infile.read())
-        return True
-    except Exception as e:
-        print(f"❌ Erro na unificação dos arquivos: {e}")
-        return False
-
 async def iniciar_conversao() -> None:
-    """Inicia o processo de conversão de texto para áudio com barra de progresso e unificação."""
+    """
+    Inicia o processo de conversão de texto para áudio de forma concorrente.
+    O tamanho dos chunks é calculado dinamicamente para equilibrar performance e velocidade.
+    A cada chunk convertido, uma mensagem exibe a parte concluída, a velocidade e o tempo restante estimado.
+    Ao final, os arquivos temporários são unificados.
+    """
     caminho_arquivo = selecionar_arquivo()
     if not caminho_arquivo:
         return
+
     voz_escolhida = menu_vozes()
     if voz_escolhida is None:
         return
+
     texto = ler_arquivo_texto(caminho_arquivo)
     if not texto:
         print("\n❌ Arquivo vazio ou ilegível")
         input("\nPressione ENTER para continuar...")
         return
+
     texto_processado = processar_texto(texto)
-    partes = dividir_texto(texto_processado)
+    # Calcula o tamanho do chunk com base no tamanho total do texto
+    chunk_size = calcular_chunk_size(texto_processado)
+    print(f"\n🔧 Tamanho do chunk definido: {chunk_size} caracteres.")
+
+    partes = dividir_texto(texto_processado, max_chars=chunk_size)
     total_partes = len(partes)
-    print(f"\n📊 Texto dividido em {total_partes} parte(s)")
+    print(f"\n📊 Texto dividido em {total_partes} parte(s).")
+    print("Para interromper a conversão a qualquer momento, pressione CTRL + C.\n")
+
     nome_base = os.path.splitext(os.path.basename(caminho_arquivo))[0]
     nome_base = limpar_nome_arquivo(nome_base)
     diretorio_saida = os.path.join(os.path.dirname(caminho_arquivo), f"{nome_base}_audio")
+
     if not os.path.exists(diretorio_saida):
         os.makedirs(diretorio_saida)
-    # Lista para os arquivos temporários
+
     temp_files = []
-    # Variáveis para medição de tempo
-    durations = []
-    overall_start = time.time()
+    tasks = []
     for i, parte in enumerate(partes, start=1):
-        sys.stdout.write(f"\r🔊 Convertendo parte {i}/{total_partes} ...")
-        sys.stdout.flush()
-        chunk_start = time.time()
-        temp_file = os.path.join(diretorio_saida, f"{nome_base}_temp_{i:03d}.mp3")
-        sucesso = await converter_texto_para_audio(parte, voz_escolhida, temp_file)
-        chunk_duration = time.time() - chunk_start
-        durations.append(chunk_duration)
-        if sucesso:
-            temp_files.append(temp_file)
-        else:
-            print(f"\n❌ Falha ao processar parte {i}")
-            input("\nPressione ENTER para continuar...")
-            return
-        avg_time = sum(durations) / len(durations)
-        remaining = total_partes - i
-        est_time = remaining * avg_time
-        progress_percent = (i / total_partes) * 100
-        bar_length = 30
-        filled_length = int(round(bar_length * i / total_partes))
-        bar = '#' * filled_length + '-' * (bar_length - filled_length)
-        sys.stdout.write(f"\rProgresso: |{bar}| {progress_percent:.1f}% | Tempo restante: {est_time:.1f} s | Velocidade: {1/avg_time:.2f} chunks/s")
-        sys.stdout.flush()
-    overall_time = time.time() - overall_start
-    sys.stdout.write("\n")
-    # Unificação dos arquivos temporários em um único mp3
-    arquivo_final = os.path.join(diretorio_saida, f"{nome_base}.mp3")
+        saida_temp = os.path.join(diretorio_saida, f"{nome_base}_temp_{i:03d}.mp3")
+        temp_files.append(saida_temp)
+        tasks.append(asyncio.create_task(converter_texto_para_audio(parte, voz_escolhida, saida_temp)))
+
+    start_time = time.time()
+    completed = 0
+
+    for task in asyncio.as_completed(tasks):
+        await task
+        completed += 1
+        elapsed = time.time() - start_time
+        speed = completed / elapsed if elapsed > 0 else 0
+        remaining = total_partes - completed
+        est_time = remaining / speed if speed > 0 else 0
+        print(f"[{completed}/{total_partes}] parte convertida. Velocidade: {speed:.2f} chunks/s. Tempo restante estimado: {est_time:.1f} s.")
+
+    overall_time = time.time() - start_time
     print("\n🔄 Unificando arquivos...")
+
+    arquivo_final = os.path.join(diretorio_saida, f"{nome_base}.mp3")
     if unificar_audio(temp_files, arquivo_final):
         for f in temp_files:
             os.remove(f)
         print(f"\n🎉 Conversão concluída em {overall_time:.1f} s! Arquivo final: {arquivo_final}")
     else:
         print("\n❌ Falha na unificação dos arquivos.")
+
     input("\nPressione ENTER para continuar...")
 
 async def main() -> None:
