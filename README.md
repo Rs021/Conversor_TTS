@@ -22,13 +22,13 @@ Um script simples e eficiente para converter textos em arquivos de áudio (MP3),
 
 - ⏸️ **Pausa e retomada automática em caso de interrupção**
 
-- 📦 **Opção de gerar único arquivo ou separar por parágrafos**
-
-- 💾 **Salvamento automático na pasta Downloads**
+- 💾 **Salvamento automático na pasta Download**
 
 ---
 
 ## 🗂️ Suporte a Arquivos PDF
+
+### ATENÇÃO: CASO NA PRIMEIRA VEZ QUE TENTAR CONVERTER O PDF PARA TXT DÊ UMA MENSAGEM DE ERRO, BASTA AGUARDAR A INSTALAÇÃO AUTOMÁTICA DAS DEPENDÊNCIAS DESSA FUNÇÃO E SELECIONAR NOVAMENTE O ARQUIVO PDF A SER CONVERTIDO, QUE IRÁ FUNCIONAR! 😉
 
 - **O script é capaz de detectar automaticamente se o arquivo selecionado é um PDF. Quando isso acontece, ele converte o conteúdo do PDF para .txt automaticamente, permitindo que o conteúdo seja lido pelo mecanismo TTS sem necessidade de ferramentas externas.**
 
