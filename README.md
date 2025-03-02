@@ -51,7 +51,7 @@ Baixe e instale o Python (3.6 ou superior):
 
 Baixe o arquivo `conversor_tts_lite.py` do repositório:  
 
-[Baixar Script](w-get -L https://raw.github.com/JonJonesBR/Conversor_TTS/refs/heads/main/conversor_tts_lite.pyheads/main/conversor_tts_lite.py)
+[Baixar Script](https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/refs/heads/main/conversor_tts_lite.pytts_lite.pyheads/main/conversor_tts_lite.py)
 
 ### 3️⃣ Instalar Dependências
 
@@ -193,7 +193,7 @@ Antonio	(voz clara e objetiva)
 
 - **Repositório Oficial	[Acessar](https://github.com/JonJonesBR/Conversor_TTS)**
 
-- **Baixar o script diretamente [Baixar](w-get -L https://raw.github.com/JonJonesBR/Conversor_TTS/refs/heads/main/conversor_tts_lite.pyheads/main/heads/main/conversor_tts_lite.pyheads/main/conversor_tts_lite.py)
+- **Baixar o script diretamente [Baixar](https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/refs/heads/main/conversor_tts_lite.pylite.pyheads/main/heads/main/conversor_tts_lite.pyheads/main/conversor_tts_lite.py)
 
 - **Python para Windows	[Baixar](https://www.python.org/downloads/)**
 
