@@ -11,6 +11,7 @@ import platform
 import zipfile
 import shutil
 import time
+import unicodedata
 
 # Tenta importar o tqdm; se não encontrar, instala-o e adiciona o diretório do usuário ao sys.path
 try:
@@ -23,7 +24,7 @@ except ModuleNotFoundError:
         site.addsitedir(site.getusersitepackages())
     except Exception as e:
         print(f"❌ Erro ao adicionar o diretório de pacotes do usuário: {e}")
-    from tqdm import tqdm  # Mesmo que a barra não seja usada, mantemos a instalação
+    from tqdm import tqdm
 
 # Garantindo o módulo requests
 try:
@@ -44,6 +45,8 @@ ENCODINGS_TENTATIVAS = ['utf-8', 'utf-16', 'iso-8859-1', 'cp1252']
 BUFFER_IO = 32768
 
 interrupcao_requisitada = False
+
+# ================== FUNÇÕES DE UTILIDADE E SISTEMA ==================
 
 def detectar_sistema():
     """Detecta o sistema operacional e ambiente de execução."""
@@ -214,7 +217,7 @@ def converter_pdf(caminho_pdf: str, caminho_txt: str) -> bool:
     return True
 
 def verificar_sistema() -> dict:
-    """Verifica o sistema operacional e retorna informações sobre ele."""
+    """Exibe informações do ambiente de execução."""
     print("\n🔍 Verificando ambiente de execução...")
     sistema = detectar_sistema()
     if sistema['termux']:
@@ -294,9 +297,7 @@ def instalar_poppler() -> bool:
             return True
         elif sistema['windows']:
             print("⚠️ Instalando Poppler no Windows...")
-            import tempfile
-            import urllib.request
-            import winreg
+            import tempfile, urllib.request, winreg
             poppler_url = "https://github.com/oschwartz10612/poppler-windows/releases/download/v23.11.0-0/Release-23.11.0-0.zip"
             try:
                 temp_dir = tempfile.mkdtemp()
@@ -595,7 +596,6 @@ async def testar_voz(voz: str) -> None:
     Testa uma voz específica com um texto de exemplo e salva a amostra
     em uma pasta na pasta Download do Android. Após a geração, retorna automaticamente.
     """
-    import edge_tts
     texto_teste = "Olá! Esta é uma demonstração da minha voz."
     communicate = edge_tts.Communicate(texto_teste, voz)
     sistema = detectar_sistema()
@@ -639,120 +639,130 @@ def listar_arquivos(diretorio: str) -> list:
         print(f"\n⚠️ Erro ao listar arquivos: {str(e)}")
     return sorted(arquivos)
 
-def selecionar_arquivo() -> str:
-    """Interface aprimorada para seleção de arquivo com navegação por diretórios."""
-    sistema = detectar_sistema()
-    if sistema['termux'] or sistema['android']:
-        dir_atual = '/storage/emulated/0/Download'
-    elif sistema['windows']:
-        dir_atual = os.path.join(os.path.expanduser('~'), 'Desktop')
+# ================== FUNÇÕES DE CORREÇÃO DE TEXTO (INTEGRADAS DO corrigir_txt.py) ==================
+
+def normalizar_texto_corrigir(texto):
+    """Normaliza o texto preservando acentos."""
+    print("\n[1/5] Normalizando texto...")
+    return unicodedata.normalize('NFKC', texto)
+
+def corrigir_espacamento_corrigir(texto):
+    """Corrige espaçamentos desnecessários e remove espaços no início e fim das linhas."""
+    print("[2/5] Corrigindo espaçamento...")
+    texto = re.sub(r'\s+', ' ', texto)
+    texto = re.sub(r'^\s+|\s+$', '', texto, flags=re.MULTILINE)
+    return texto
+
+def ajustar_titulo_e_capitulos_corrigir(texto):
+    """
+    Ajusta título, autor e formata capítulos.
+    Tenta separar o cabeçalho (título e autor) se estiver em uma única linha.
+    """
+    print("[3/5] Ajustando título, autor e capítulos...")
+    pattern = r"^(?P<titulo>.+?)\s+(?P<autor>[A-Z][a-z]+(?:\s+[A-Z][a-z]+))\s+(?P<body>.*)$"
+    match = re.match(pattern, texto, re.DOTALL)
+    if match:
+        titulo = match.group("titulo").strip()
+        autor = match.group("autor").strip()
+        body = match.group("body").strip()
+        if not titulo.endswith(('.', '!', '?')):
+            titulo += '.'
+        if not autor.endswith(('.', '!', '?')):
+            autor += '.'
+        novo_texto = titulo + "\n" + autor + "\n\n" + body
     else:
-        dir_atual = os.path.join(os.path.expanduser('~'), 'Desktop')
-    while True:
-        exibir_banner()
-        print("\n📂 SELEÇÃO DE ARQUIVO")
-        print(f"\nDiretório atual: {dir_atual}")
-        print("\nArquivos disponíveis:")
-        arquivos = listar_arquivos(dir_atual)
-        if not arquivos:
-            print("\n⚠️ Nenhum arquivo TXT ou PDF encontrado neste diretório")
-        else:
-            for i, arquivo in enumerate(arquivos, 1):
-                print(f"{i}. {arquivo}")
-        print("\nOpções:")
-        print("D. Mudar diretório")
-        print("M. Digitar caminho manualmente")
-        print("V. Voltar ao menu principal")
-        escolha = input("\nEscolha uma opção: ").strip().upper()
-        if escolha == 'V':
-            return ''
-        elif escolha == 'D':
-            novo_dir = input("\nDigite o caminho do novo diretório: ").strip()
-            if os.path.isdir(novo_dir):
-                dir_atual = novo_dir
-            else:
-                print("\n❌ Diretório inválido")
-                input("\nPressione ENTER para continuar...")
-        elif escolha == 'M':
-            caminho = input("\nDigite o caminho completo do arquivo: ").strip()
-            if not os.path.exists(caminho):
-                print(f"\n❌ Arquivo não encontrado: {caminho}")
-                input("\nPressione ENTER para continuar...")
-                continue
-            ext = os.path.splitext(caminho)[1].lower()
-            if ext == '.pdf':
-                caminho_txt = os.path.splitext(caminho)[0] + '.txt'
-                if not converter_pdf(caminho, caminho_txt):
-                    print("\n⚠️ Falha na conversão do PDF. Tente outro arquivo.")
-                    input("\nPressione ENTER para continuar...")
-                    continue
-                editar = input("\nDeseja editar o arquivo TXT gerado para melhorar a narração? (s/n): ").strip().lower()
-                if editar == 's':
-                    if sistema['android']:
-                        print("\nO arquivo TXT convertido foi salvo em seu diretório padrão (normalmente Download).")
-                        print("Após editá-lo, reinicie a conversão selecionando-o neste script pela opção 1 do menu inicial.")
-                        input("\nPressione ENTER para retornar ao menu principal...")
-                        return ''
-                    else:
-                        if sistema['windows']:
-                            os.startfile(caminho_txt)
-                        elif sistema['macos']:
-                            subprocess.Popen(["open", caminho_txt])
-                        else:
-                            subprocess.Popen(["xdg-open", caminho_txt])
-                        input("\nEdite o arquivo, salve as alterações e pressione ENTER para continuar...")
-                return caminho_txt
-            elif ext == '.txt':
-                return caminho
-            else:
-                print(f"\n❌ Formato não suportado: {ext}")
-                print("💡 Apenas arquivos .txt e .pdf são suportados")
-                input("\nPressione ENTER para continuar...")
-        elif escolha.isdigit():
-            indice = int(escolha) - 1
-            if 0 <= indice < len(arquivos):
-                arquivo_selecionado = arquivos[indice]
-                caminho_completo = os.path.join(dir_atual, arquivo_selecionado)
-                if arquivo_selecionado.lower().endswith('.pdf'):
-                    caminho_txt = os.path.splitext(caminho_completo)[0] + '.txt'
-                    if not converter_pdf(caminho_completo, caminho_txt):
-                        print("\n⚠️ Falha na conversão do PDF. Tente outro arquivo.")
-                        input("\nPressione ENTER para continuar...")
-                        continue
-                    editar = input("\nDeseja editar o arquivo TXT gerado para melhorar a narração? (s/n): ").strip().lower()
-                    if editar == 's':
-                        if sistema['android']:
-                            print("\nO arquivo TXT convertido foi salvo em seu diretório padrão (normalmente Download).")
-                            print("Após editá-lo, reinicie a conversão selecionando-o neste script pela opção 1 do menu inicial.")
-                            input("\nPressione ENTER para retornar ao menu principal...")
-                            return ''
-                        else:
-                            if sistema['windows']:
-                                os.startfile(caminho_txt)
-                            elif sistema['macos']:
-                                subprocess.Popen(["open", caminho_txt])
-                            else:
-                                subprocess.Popen(["xdg-open", caminho_txt])
-                            input("\nEdite o arquivo, salve as alterações e pressione ENTER para continuar...")
-                    return caminho_txt
+        linhas = texto.splitlines()
+        header = []
+        corpo = []
+        non_empty_count = 0
+        for linha in linhas:
+            if linha.strip():
+                non_empty_count += 1
+                if non_empty_count <= 2:
+                    header.append(linha.strip())
                 else:
-                    return caminho_completo
+                    corpo.append(linha)
             else:
-                print("\n❌ Opção inválida")
-                input("\nPressione ENTER para continuar...")
-        else:
-            print("\n❌ Opção inválida")
-            input("\nPressione ENTER para continuar...")
+                if non_empty_count >= 2:
+                    corpo.append(linha)
+        if len(header) == 1:
+            palavras = header[0].split()
+            if len(palavras) >= 4 and palavras[-1][0].isupper() and palavras[-2][0].isupper():
+                autor = " ".join(palavras[-2:])
+                titulo = " ".join(palavras[:-2])
+                header = [titulo.strip(), autor.strip()]
+        if header:
+            if not header[0].endswith(('.', '!', '?')):
+                header[0] += '.'
+        if len(header) > 1:
+            if not header[1].endswith(('.', '!', '?')):
+                header[1] += '.'
+        novo_texto = "\n".join(header + [""] + corpo)
+    novo_texto = re.sub(r'(?i)\b(capítulo\s*\d+)\b', r'\n\n\1.\n\n', novo_texto)
+    return novo_texto
+
+def inserir_quebra_apos_ponto_corrigir(texto):
+    """Insere uma quebra de parágrafo após cada ponto final."""
+    print("[4/5] Inserindo quebra de parágrafo após cada ponto final...")
+    texto = re.sub(r'\.\s+', '.\n\n', texto)
+    return texto
+
+def formatar_paragrafos_corrigir(texto):
+    """Formata os parágrafos garantindo uma linha em branco entre eles."""
+    print("[5/5] Formatando parágrafos...")
+    paragrafos = [p.strip() for p in texto.split('\n\n') if p.strip()]
+    return '\n\n'.join(paragrafos)
+
+def melhorar_texto_corrigido(texto):
+    """Executa todas as etapas de processamento do texto para aprimorá-lo."""
+    print("\n--- INÍCIO DO PROCESSAMENTO (Correção de TXT) ---")
+    etapas = [
+        normalizar_texto_corrigir,
+        corrigir_espacamento_corrigir,
+        ajustar_titulo_e_capitulos_corrigir,
+        inserir_quebra_apos_ponto_corrigir,
+        formatar_paragrafos_corrigir
+    ]
+    for etapa in etapas:
+        texto = etapa(texto)
+    print("\n--- PROCESSAMENTO CONCLUÍDO ---")
+    return texto
+
+def verificar_e_corrigir_arquivo(caminho_txt: str) -> str:
+    """
+    Verifica se o arquivo TXT já foi processado (contém o sufixo '_formatado').
+    Caso não, lê o arquivo, o processa e o salva com o sufixo, retornando o novo caminho.
+    """
+    base, ext = os.path.splitext(caminho_txt)
+    if base.endswith("_formatado"):
+        return caminho_txt
+    try:
+        with open(caminho_txt, 'r', encoding='utf-8') as f:
+            conteudo = f.read()
+    except Exception as e:
+        print(f"❌ Erro ao ler o arquivo TXT: {e}")
+        return caminho_txt
+    conteudo_corrigido = melhorar_texto_corrigido(conteudo)
+    novo_caminho = base + "_formatado" + ext
+    try:
+        with open(novo_caminho, 'w', encoding='utf-8') as f:
+            f.write(conteudo_corrigido)
+        print(f"✅ Arquivo corrigido e salvo em: {novo_caminho}")
+    except Exception as e:
+        print(f"❌ Erro ao salvar o arquivo corrigido: {e}")
+        return caminho_txt
+    return novo_caminho
+
+# ================== FUNÇÕES DE LEITURA E PROCESSAMENTO DE ARQUIVOS ==================
 
 def detectar_encoding(caminho_arquivo: str) -> str:
     """Detecta o encoding de um arquivo de texto."""
-    import chardet
     try:
         with open(caminho_arquivo, 'rb') as f:
             resultado = chardet.detect(f.read())
         encoding_detectado = resultado['encoding']
         if not encoding_detectado:
-            for enc in ['utf-8', 'utf-16', 'iso-8859-1', 'cp1252']:
+            for enc in ENCODINGS_TENTATIVAS:
                 try:
                     with open(caminho_arquivo, 'r', encoding=enc) as f:
                         f.read(100)
@@ -778,11 +788,9 @@ def ler_arquivo_texto(caminho_arquivo: str) -> str:
 
 def processar_texto(texto: str) -> str:
     """
-    Processa o texto para melhorar a pronúncia e entonação, convertendo abreviações comuns para suas formas completas.
+    Processa o texto para melhorar a pronúncia e entonação,
+    convertendo abreviações comuns para suas formas completas.
     """
-    import re
-    from num2words import num2words
-
     texto = re.sub(r'\s+', ' ', texto)
     abreviacoes = {
         r'\bDr\.\b': 'Doutor',
@@ -838,12 +846,11 @@ def calcular_chunk_size(texto: str) -> int:
         return 100
     else:
         target_chunks = 50
-        # Garante um valor mínimo de 50 caracteres por chunk
         return max(50, total // target_chunks)
 
 def dividir_texto(texto: str, max_chars: int) -> list:
     """
-    Divide o texto em partes menores para processamento, ignorando parágrafos.
+    Divide o texto em partes menores para processamento.
     """
     partes = []
     start = 0
@@ -855,7 +862,6 @@ def dividir_texto(texto: str, max_chars: int) -> list:
 
 async def converter_texto_para_audio(texto: str, voz: str, caminho_saida: str) -> bool:
     """Converte texto para áudio usando Edge TTS."""
-    import edge_tts
     try:
         communicate = edge_tts.Communicate(texto, voz)
         await communicate.save(caminho_saida)
@@ -864,12 +870,135 @@ async def converter_texto_para_audio(texto: str, voz: str, caminho_saida: str) -
         print(f"\n❌ Erro na conversão: {str(e)}")
         return False
 
+# ================== INTEGRAÇÃO DA CORREÇÃO DE TXT NO FLUXO DE CONVERSÃO TTS ==================
+
+def selecionar_arquivo() -> str:
+    """
+    Interface aprimorada para seleção de arquivo com navegação por diretórios.
+    Se o usuário selecionar um PDF, ele é convertido para TXT e o arquivo gerado é corrigido.
+    Se for um arquivo TXT e o nome não contiver '_formatado', o arquivo é automaticamente corrigido.
+    """
+    sistema = detectar_sistema()
+    if sistema['termux'] or sistema['android']:
+        dir_atual = '/storage/emulated/0/Download'
+    elif sistema['windows']:
+        dir_atual = os.path.join(os.path.expanduser('~'), 'Desktop')
+    else:
+        dir_atual = os.path.join(os.path.expanduser('~'), 'Desktop')
+    while True:
+        exibir_banner()
+        print("\n📂 SELEÇÃO DE ARQUIVO")
+        print(f"\nDiretório atual: {dir_atual}")
+        print("\nArquivos disponíveis:")
+        arquivos = listar_arquivos(dir_atual)
+        if not arquivos:
+            print("\n⚠️ Nenhum arquivo TXT ou PDF encontrado neste diretório")
+        else:
+            for i, arquivo in enumerate(arquivos, 1):
+                print(f"{i}. {arquivo}")
+        print("\nOpções:")
+        print("D. Mudar diretório")
+        print("M. Digitar caminho manualmente")
+        print("V. Voltar ao menu principal")
+        escolha = input("\nEscolha uma opção: ").strip().upper()
+        if escolha == 'V':
+            return ''
+        elif escolha == 'D':
+            novo_dir = input("\nDigite o caminho do novo diretório: ").strip()
+            if os.path.isdir(novo_dir):
+                dir_atual = novo_dir
+            else:
+                print("\n❌ Diretório inválido")
+                input("\nPressione ENTER para continuar...")
+        elif escolha == 'M':
+            caminho = input("\nDigite o caminho completo do arquivo: ").strip()
+            if not os.path.exists(caminho):
+                print(f"\n❌ Arquivo não encontrado: {caminho}")
+                input("\nPressione ENTER para continuar...")
+                continue
+            ext = os.path.splitext(caminho)[1].lower()
+            if ext == '.pdf':
+                caminho_txt = os.path.splitext(caminho)[0] + '.txt'
+                if not converter_pdf(caminho, caminho_txt):
+                    print("\n⚠️ Falha na conversão do PDF. Tente outro arquivo.")
+                    input("\nPressione ENTER para continuar...")
+                    continue
+                # Após converter, verifica se o TXT já foi corrigido
+                caminho_txt = verificar_e_corrigir_arquivo(caminho_txt)
+                editar = input("\nDeseja editar o arquivo TXT corrigido? (s/n): ").strip().lower()
+                if editar == 's':
+                    if sistema['android']:
+                        print("\nO arquivo TXT corrigido foi salvo no diretório padrão (normalmente Download).")
+                        print("Após editá-lo, reinicie a conversão selecionando-o neste script pela opção 1 do menu inicial.")
+                        input("\nPressione ENTER para retornar ao menu principal...")
+                        return ''
+                    else:
+                        if sistema['windows']:
+                            os.startfile(caminho_txt)
+                        elif sistema['macos']:
+                            subprocess.Popen(["open", caminho_txt])
+                        else:
+                            subprocess.Popen(["xdg-open", caminho_txt])
+                        input("\nEdite o arquivo, salve as alterações e pressione ENTER para continuar...")
+                return caminho_txt
+            elif ext == '.txt':
+                # Se o arquivo TXT não contém o sufixo _formatado, corrige-o automaticamente
+                if not os.path.basename(caminho).lower().endswith("_formatado.txt"):
+                    caminho = verificar_e_corrigir_arquivo(caminho)
+                return caminho
+            else:
+                print(f"\n❌ Formato não suportado: {ext}")
+                print("💡 Apenas arquivos .txt e .pdf são suportados")
+                input("\nPressione ENTER para continuar...")
+        elif escolha.isdigit():
+            indice = int(escolha) - 1
+            if 0 <= indice < len(arquivos):
+                arquivo_selecionado = arquivos[indice]
+                caminho_completo = os.path.join(dir_atual, arquivo_selecionado)
+                ext = os.path.splitext(arquivo_selecionado)[1].lower()
+                if ext == '.pdf':
+                    caminho_txt = os.path.splitext(caminho_completo)[0] + '.txt'
+                    if not converter_pdf(caminho_completo, caminho_txt):
+                        print("\n⚠️ Falha na conversão do PDF. Tente outro arquivo.")
+                        input("\nPressione ENTER para continuar...")
+                        continue
+                    # Corrige o TXT gerado, se necessário
+                    caminho_txt = verificar_e_corrigir_arquivo(caminho_txt)
+                    editar = input("\nDeseja editar o arquivo TXT corrigido? (s/n): ").strip().lower()
+                    if editar == 's':
+                        if sistema['android']:
+                            print("\nO arquivo TXT corrigido foi salvo no diretório padrão (normalmente Download).")
+                            print("Após editá-lo, reinicie a conversão selecionando-o neste script pela opção 1 do menu inicial.")
+                            input("\nPressione ENTER para retornar ao menu principal...")
+                            return ''
+                        else:
+                            if sistema['windows']:
+                                os.startfile(caminho_txt)
+                            elif sistema['macos']:
+                                subprocess.Popen(["open", caminho_txt])
+                            else:
+                                subprocess.Popen(["xdg-open", caminho_txt])
+                            input("\nEdite o arquivo, salve as alterações e pressione ENTER para continuar...")
+                    return caminho_txt
+                elif ext == '.txt':
+                    if not os.path.basename(caminho_completo).lower().endswith("_formatado.txt"):
+                        caminho_completo = verificar_e_corrigir_arquivo(caminho_completo)
+                    return caminho_completo
+                else:
+                    return caminho_completo
+            else:
+                print("\n❌ Opção inválida")
+                input("\nPressione ENTER para continuar...")
+        else:
+            print("\n❌ Opção inválida")
+            input("\nPressione ENTER para continuar...")
+
+# ================== FUNÇÕES DE CONVERSÃO TTS ==================
+
 async def iniciar_conversao() -> None:
     """
     Inicia o processo de conversão de texto para áudio de forma concorrente.
-    O tamanho dos chunks é calculado dinamicamente para equilibrar performance e velocidade.
-    A cada chunk convertido, uma mensagem exibe a parte concluída, a velocidade e o tempo restante estimado.
-    Ao final, os arquivos temporários são unificados.
+    O tamanho dos chunks é calculado dinamicamente.
     """
     caminho_arquivo = selecionar_arquivo()
     if not caminho_arquivo:
