@@ -53,6 +53,8 @@ Baixe e instale o Python (3.6 ou superior):
 Baixe o arquivo `conversor_tts_lite.py` do repositório:  
 
 [Baixar Script](https://raw.github.com/JonJonesBR/Conversor_TTS/refs/heads/main/conversor_tts_lite.py.zip)
+ou
+[Baixar Script](https://raw.github.com/JonJonesBR/Conversor_TTS/refs/heads/main/conversor_tts_lite_MELHORADO.py.zip)
 
 ### 3️⃣ Instalar Dependências
 
@@ -71,6 +73,12 @@ cd Downloads
 
 python conversor_tts_lite.py
 ```
+ou
+```bash
+cd Downloads
+
+python conversor_tts_lite_MELHORADO.py
+```
 
 ## 🐧 Linux
 
@@ -87,6 +95,10 @@ sudo apt update && sudo apt install python3 python3-pip git -y
 ```bash
 curl -o conversor_tts_lite.py https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/conversor_tts_lite.py
 ```
+ou
+```bash
+curl -o conversor_tts_lite.py https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/conversor_tts_lite_MELHORADO.py
+```
 
 ### 3️⃣ Instalar Dependências
 
@@ -98,6 +110,10 @@ pip3 install edge-tts langdetect unidecode num2words chardet requests
 
 ```bash
 python3 conversor_tts_lite.py
+```
+ou
+```bash
+python conversor_tts_lite_MELHORADO.py
 ```
 
 ## 📱 Android (Termux)
@@ -126,6 +142,10 @@ apt install python git -y
 ```bash
 curl -o conversor_tts_lite.py https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/conversor_tts_lite.py
 ```
+ou
+```bash
+curl -o conversor_tts_lite.py https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/conversor_tts_lite_MELHORADO.py
+```
 
 ### 4️⃣ Instalar Dependências
 
@@ -138,6 +158,11 @@ pip install edge-tts langdetect unidecode num2words chardet requests
 ```bash
 python conversor_tts_lite.py
 ```
+ou
+```bash
+python conversor_tts_lite_MELHORADO.py
+```
+
 ## 📂 Como Funciona
 
 -  **1.	Coloque seu arquivo (TXT ou PDF) na pasta Downloads.**
@@ -193,8 +218,6 @@ Antonio	(voz clara e objetiva)
 ## 🔗 Links Úteis
 
 - **Repositório Oficial	[Acessar](https://github.com/JonJonesBR/Conversor_TTS)**
-
-- **Baixar o script diretamente [Baixar](https://raw.github.com/JonJonesBR/Conversor_TTS/refs/heads/main/conversor_tts_lite.py.zip)**
 
 - **Python para Windows	[Baixar](https://www.python.org/downloads/)**
 
