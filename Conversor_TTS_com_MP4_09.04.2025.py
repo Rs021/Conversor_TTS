@@ -520,7 +520,7 @@ async def atualizar_script() -> None:
         await aioconsole.ainput("\nPressione ENTER para continuar...")
         return
     sistema = detectar_sistema()
-    url = "https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/conversor_tts_lite.py"
+    url = "https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/Conversor_TTS_com_MP4_09.04.2025.py"
     try:
         if sistema['windows']:
             try:
