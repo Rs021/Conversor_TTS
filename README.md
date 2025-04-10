@@ -52,7 +52,7 @@ Baixe e instale o Python (3.6 ou superior):
 
 Baixe os arquivos do repositório:  
 
-[Baixar Scripts]([https://raw.github.com/JonJonesBR/Conversor_TTS/refs/heads/main/Conversor_TTS.zip](https://github.com/JonJonesBR/Conversor_TTS/archive/refs/heads/main.zip))
+[Baixar Scripts]([https://raw.github.com/JonJonesBR/Conversor_TTS/refs/heads/main/Conversor_TTS.zip])(https://github.com/JonJonesBR/Conversor_TTS/archive/refs/heads/main.zip)
 
 ### 3️⃣ Instalar Dependências
 
