@@ -50,11 +50,9 @@ Baixe e instale o Python (3.6 ou superior):
 
 ### 2️⃣ Baixar o Script
 
-Baixe o arquivo `conversor_tts_lite.py` do repositório:  
+Baixe os arquivos do repositório:  
 
-[Baixar Script](https://raw.github.com/JonJonesBR/Conversor_TTS/refs/heads/main/conversor_tts_lite.py.zip)
-ou
-[Baixar Script](https://raw.github.com/JonJonesBR/Conversor_TTS/refs/heads/main/conversor_tts_lite_MELHORADO.py.zip)
+[Baixar Scripts]([https://raw.github.com/JonJonesBR/Conversor_TTS/refs/heads/main/Conversor_TTS.zip](https://github.com/JonJonesBR/Conversor_TTS/archive/refs/heads/main.zip))
 
 ### 3️⃣ Instalar Dependências
 
@@ -66,18 +64,12 @@ pip install edge-tts langdetect unidecode num2words chardet requests
 
 ### 4️⃣ Executar o Script
 
-Navegue até a pasta onde salvou o script (ex.: Downloads):
+Navegue até a pasta onde salvou os scripts (ex.: Downloads) e execute o que preferir:
 
 ```bash
 cd Downloads
 
-python conversor_tts_lite.py
-```
-ou
-```bash
-cd Downloads
-
-python conversor_tts_lite_MELHORADO.py
+python NOME_DO_SCRIPT_QUE_DESEJA_EXPERIMEMTAR.py
 ```
 
 ## 🐧 Linux
@@ -93,11 +85,7 @@ sudo apt update && sudo apt install python3 python3-pip git -y
 ### 2️⃣ Baixar o Script
 
 ```bash
-curl -o conversor_tts_lite.py https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/conversor_tts_lite.py
-```
-ou
-```bash
-curl -o conversor_tts_lite.py https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/conversor_tts_lite_MELHORADO.py
+curl -L -o Conversor_TTS.zip https://github.com/JonJonesBR/Conversor_TTS/archive/refs/heads/main.zip
 ```
 
 ### 3️⃣ Instalar Dependências
@@ -109,11 +97,7 @@ pip3 install edge-tts langdetect unidecode num2words chardet requests
 ### 4️⃣ Executar o Script
 
 ```bash
-python3 conversor_tts_lite.py
-```
-ou
-```bash
-python conversor_tts_lite_MELHORADO.py
+python NOME_DO_SCRIPT_QUE_DESEJA_EXPERIMEMTAR.py
 ```
 
 ## 📱 Android (Termux)
@@ -140,11 +124,7 @@ apt install python git -y
 ### 3️⃣ Baixar o Script
 
 ```bash
-curl -o conversor_tts_lite.py https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/conversor_tts_lite.py
-```
-ou
-```bash
-curl -o conversor_tts_lite.py https://raw.githubusercontent.com/JonJonesBR/Conversor_TTS/main/conversor_tts_lite_MELHORADO.py
+curl -L -o Conversor_TTS.zip https://github.com/JonJonesBR/Conversor_TTS/archive/refs/heads/main.zip
 ```
 
 ### 4️⃣ Instalar Dependências
