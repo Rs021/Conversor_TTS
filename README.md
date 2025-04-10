@@ -1,4 +1,4 @@
-# Conversor TTS Lite – Texto para Fala em Português Brasileiro (PT-BR)
+# Conversor TTS – Texto para Fala em Português Brasileiro (PT-BR)
 
 Um script simples e eficiente para converter textos em arquivos de áudio (MP3), utilizando a tecnologia **Edge TTS** da Microsoft. Compatível com **Windows**, **Linux** e **Android (via Termux)**, este projeto foi desenvolvido para facilitar a conversão de textos longos em áudio de alta qualidade.
 
