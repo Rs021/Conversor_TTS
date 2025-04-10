@@ -54,6 +54,71 @@ Baixe os arquivos do repositório:
 
 [Baixar Scripts](https://raw.github.com/JonJonesBR/Conversor_TTS/refs/heads/main/Conversor_TTS.zip)
 
+Após isso, extraia os arquivos baixados em uma pasta de sua escolha e execute o terminal do windows nela com os seguintes possíveis passos:
+
+Para **abrir o Terminal do Windows** (Windows Terminal ou Prompt de Comando) diretamente em uma pasta usando o **botão direito do mouse** ou um **atalho de teclado**, siga estas opções:
+
+---
+
+### **1. Adicionar "Abrir Terminal aqui" ao menu de contexto (botão direito)**
+#### **Método 1: Usando o Windows Terminal (Recomendado)**
+Se você tem o **Windows Terminal** instalado (padrão no Windows 11), ele já inclui a opção nativamente:
+1. **Clique com o botão direito** em uma pasta ou no espaço vazio dentro dela.
+2. Selecione **"Abrir no Terminal"** (ou **"Open in Terminal"** em inglês).
+
+Se não aparecer, ative manualmente:
+1. Abra o **Windows Terminal** como administrador.
+2. Clique no **⬇ (menu suspenso)** > **Configurações**.
+3. Vá em **"Configurações do Windows Terminal"** > **"Abrir o menu de contexto"**.
+4. Ative **"Mostrar a entrada 'Abrir no Terminal' no menu de contexto de arquivos"**.
+
+#### **Método 2: Adicionar manualmente via Registro (funciona para CMD/PowerShell)**
+1. Pressione **`Win + R`**, digite **`regedit`** e pressione **Enter**.
+2. Navegue até:
+   ```
+   HKEY_CLASSES_ROOT\Directory\Background\shell
+   ```
+3. **Clique direito** em **`shell`** > **Novo** > **Chave** e nomeie como **`Open Terminal Here`**.
+4. Clique com o direito na nova chave, **Novo** > **Chave** e nomeie como **`command`**.
+5. No lado direito, clique duas vezes em **`(Padrão)`** e insira um dos comandos abaixo:
+   - **Windows Terminal**:
+     ```
+     wt -d "%V"
+     ```
+   - **PowerShell**:
+     ```
+     powershell.exe -NoExit -Command "Set-Location '%V'"
+     ```
+   - **CMD**:
+     ```
+     cmd.exe /k "cd /d "%V""
+     ```
+6. Reinicie o Explorer (via Gerenciador de Tarefas) ou o computador.
+
+---
+
+### **2. Atalho de teclado para abrir o Terminal em uma pasta**
+1. Abra o **Explorador de Arquivos** e navegue até a pasta desejada.
+2. Pressione **`Alt + D`** para focar na barra de endereço.
+3. Digite **`wt`** (para Windows Terminal), **`powershell`** ou **`cmd`** e pressione **Enter**.
+   - Isso abrirá o terminal no diretório atual.
+
+#### **Atalho personalizado (se necessário)**:
+- Crie um atalho na área de trabalho com o comando:
+  ```cmd
+  cmd /k "cd /d C:\caminho\da\pasta"
+  ```
+- Defina um atalho de teclado nas **Propriedades** do atalho.
+
+---
+
+### **Observações**:
+- No **Windows 11**, a opção de terminal já vem integrada.
+- Se usar **PowerShell 7+**, substitua `powershell.exe` por `pwsh.exe`.
+- Para **WSL (Linux)**, use `wsl` no lugar de `cmd`.
+
+Pronto! Agora você pode acessar o terminal rapidamente a partir de qualquer pasta. 🚀
+
 ### 3️⃣ Instalar Dependências
 
 Abra o **Prompt de Comando** (Windows + R → `cmd`) e digite:
@@ -63,6 +128,7 @@ pkg update -y && pkg upgrade -y
 pkg install -y python git ffmpeg poppler termux-api
 pip install edge-tts langdetect unidecode num2words chardet requests tqdm aioconsole
 termux-setup-storage
+pkg install unzip -y
 ```
 
 ### 4️⃣ Executar o Script
@@ -72,7 +138,7 @@ Navegue até a pasta onde salvou os scripts (ex.: Downloads) e execute o que pre
 ```bash
 cd Downloads
 
-python NOME_DO_SCRIPT_QUE_DESEJA_EXPERIMEMTAR.py
+python Conversor_TTS_com_MP4_09.04.2025.py
 ```
 
 ## 🐧 Linux
@@ -91,7 +157,13 @@ sudo apt update && sudo apt install python3 python3-pip git -y
 curl -L -o Conversor_TTS.zip https://github.com/JonJonesBR/Conversor_TTS/archive/refs/heads/main.zip
 ```
 
-### 3️⃣ Instalar Dependências
+### 3️⃣ Extrair o arquivo zipado para a pasta raiz do Termux
+
+```bash
+unzip -j Conversor_TTS.zip -d ~/
+```
+
+### 4️⃣ Instalar Dependências
 
 ```bash
 pkg update -y && pkg upgrade -y
@@ -100,10 +172,10 @@ pip install edge-tts langdetect unidecode num2words chardet requests tqdm aiocon
 termux-setup-storage
 ```
 
-### 4️⃣ Executar o Script
+### 5️⃣ Executar o Script
 
 ```bash
-python NOME_DO_SCRIPT_QUE_DESEJA_EXPERIMEMTAR.py
+python Conversor_TTS_com_MP4_09.04.2025.py
 ```
 
 ## 📱 Android (Termux)
@@ -135,16 +207,16 @@ termux-setup-storage
 curl -L -o Conversor_TTS.zip https://github.com/JonJonesBR/Conversor_TTS/archive/refs/heads/main.zip
 ```
 
-### 4️⃣ Instalar Dependências
+### 4️⃣ Extrair o arquivo zipado para a pasta raiz do Termux
 
 ```bash
-pip install edge-tts langdetect unidecode num2words chardet requests tqdm aioconsole
+unzip -j Conversor_TTS.zip -d ~/
 ```
 
 ### 5️⃣ Executar o Script
 
 ```bash
-python NOME_DO_SCRIPT_QUE_DESEJA_EXPERIMEMTAR.py
+python Conversor_TTS_com_MP4_09.04.2025.py
 ```
 
 ## 📂 Como Funciona
