@@ -59,7 +59,10 @@ Baixe os arquivos do repositório:
 Abra o **Prompt de Comando** (Windows + R → `cmd`) e digite:
 
 ```bash
-pip install edge-tts langdetect unidecode num2words chardet requests
+pkg update -y && pkg upgrade -y
+pkg install -y python git ffmpeg poppler termux-api
+pip install edge-tts langdetect unidecode num2words chardet requests tqdm aioconsole
+termux-setup-storage
 ```
 
 ### 4️⃣ Executar o Script
@@ -91,7 +94,10 @@ curl -L -o Conversor_TTS.zip https://github.com/JonJonesBR/Conversor_TTS/archive
 ### 3️⃣ Instalar Dependências
 
 ```bash
-pip3 install edge-tts langdetect unidecode num2words chardet requests
+pkg update -y && pkg upgrade -y
+pkg install -y python git ffmpeg poppler termux-api
+pip install edge-tts langdetect unidecode num2words chardet requests tqdm aioconsole
+termux-setup-storage
 ```
 
 ### 4️⃣ Executar o Script
@@ -115,10 +121,12 @@ Baixe a versão atualizada:
 Após abrir o Termux, rode:
 
 ```bash
+pkg update -y && pkg upgrade -y
+pkg install -y python git ffmpeg poppler termux-api
+pip install edge-tts langdetect unidecode num2words chardet requests tqdm aioconsole
 termux-setup-storage
-apt update && apt upgrade -y
-apt install python git -y
 ```
+
 - **Se for perguhtado alguma coisa, basta digitar y no terminal e Enter**
 
 ### 3️⃣ Baixar o Script
@@ -130,17 +138,13 @@ curl -L -o Conversor_TTS.zip https://github.com/JonJonesBR/Conversor_TTS/archive
 ### 4️⃣ Instalar Dependências
 
 ```bash
-pip install edge-tts langdetect unidecode num2words chardet requests
+pip install edge-tts langdetect unidecode num2words chardet requests tqdm aioconsole
 ```
 
 ### 5️⃣ Executar o Script
 
 ```bash
-python conversor_tts_lite.py
-```
-ou
-```bash
-python conversor_tts_lite_MELHORADO.py
+python NOME_DO_SCRIPT_QUE_DESEJA_EXPERIMEMTAR.py
 ```
 
 ## 📂 Como Funciona
