@@ -1,3 +1,51 @@
+# === Início da integração do módulo de formatação ===
+import re
+
+def padronizar_capitulos(texto):
+    conversao_manual = {
+        'UM': 1, 'UMI': 2, 'UMII': 3, 'UMIII': 4, 'UMIV': 5, 'UMV': 6, 'UMVI': 7,
+        'CINCO': 5, 'CINCOI': 6, 'CINCOII': 7, 'CINCOIII': 8, 'CINCOIV': 9, 'CINCOV': 10,
+        'UMX': 9, 'DEZ': 10, 'DEZI': 11, 'ONZE': 11, 'DOZE': 12
+    }
+    def substituidor(match):
+        capitulo = match.group(1).strip().upper()
+        titulo = match.group(2).strip()
+        numero = conversao_manual.get(capitulo, capitulo)
+        return f"CAPÍTULO {numero}: {titulo.title()}"
+
+    padrao = re.compile(r'CAP[IÍ]TULO\s+([A-Z0-9]+)\s*[:\-]?\s*(.+)', re.IGNORECASE)
+    texto_formatado = padrao.sub(substituidor, texto)
+    return texto_formatado
+
+def normalizar_caixa(texto):
+    linhas = texto.splitlines()
+    texto_final = []
+    for linha in linhas:
+        if linha.isupper() and len(linha.strip()) > 3:
+            texto_final.append(linha.capitalize())
+        else:
+            texto_final.append(linha)
+    return "\n".join(texto_final)
+
+def separar_capitulos(texto):
+    return re.sub(r'(CAP[IÍ]TULO\s+\d+:)', r'\n\n\1', texto)
+
+def gerar_indice(texto):
+    padrao = re.compile(r'CAP[IÍ]TULO\s+(\d+):\s+(.+)', re.IGNORECASE)
+    return "\n".join([
+        f"{match.group(1)}. {match.group(2).title()}" for match in padrao.finditer(texto)
+    ])
+
+def aplicar_formatacao(texto):
+    texto = padronizar_capitulos(texto)
+    texto = normalizar_caixa(texto)
+    texto = separar_capitulos(texto)
+    indice = gerar_indice(texto)
+    return indice + '\n\n' + texto
+
+
+# === Fim da integração ===
+
 #!/usr/bin/env python3
 import os
 import sys
@@ -14,6 +62,7 @@ import time
 import unicodedata
 import edge_tts
 import aioconsole
+import chardet
 from math import ceil
 
 # ================== CONFIGURAÇÕES GLOBAIS ==================
@@ -736,20 +785,54 @@ def formatar_paragrafos_corrigir(texto):
     paragrafos = [p.strip() for p in texto.split('\n\n') if p.strip()]
     return '\n\n'.join(paragrafos)
 
+
 def melhorar_texto_corrigido(texto):
-    """Executa todas as etapas de processamento do texto para aprimorá-lo."""
-    print("\n--- INÍCIO DO PROCESSAMENTO (Correção de TXT) ---")
-    etapas = [
-        normalizar_texto_corrigir,
-        corrigir_espacamento_corrigir,
-        ajustar_titulo_e_capitulos_corrigir,
-        inserir_quebra_apos_ponto_corrigir,
-        formatar_paragrafos_corrigir
-    ]
-    for etapa in etapas:
-        texto = etapa(texto)
-    print("\n--- PROCESSAMENTO CONCLUÍDO ---")
+    texto = texto.replace('\f', '\n\n')  # Remove form feeds
+    import re
+
+    def remover_num_paginas_rodapes(texto):
+        return re.sub(r'\n?\s*\d+\s+cda_pr_.*?\.indd\s+\d+\s+\d+/\d+/\d+\s+\d+:\d+\s+[APM]{2}', '', texto)
+
+    def corrigir_hifenizacao(texto):
+        return re.sub(r'(\w+)-\s*\n\s*(\w+)', r'\1\2', texto)
+
+    def remover_infos_bibliograficas_rodape(texto):
+        return re.sub(r'^\s*(cda_pr_.*?\.indd.*?)$', '', texto, flags=re.MULTILINE)
+
+    def converter_capitulos_para_extenso_simples(texto):
+        substituicoes = {
+            'CAPÍTULO I': 'CAPÍTULO UM',
+            'CAPÍTULO II': 'CAPÍTULO DOIS',
+            'CAPÍTULO III': 'CAPÍTULO TRÊS',
+            'CAPÍTULO IV': 'CAPÍTULO QUATRO',
+            'CAPÍTULO V': 'CAPÍTULO CINCO',
+            'CAPÍTULO VI': 'CAPÍTULO SEIS',
+            'CAPÍTULO VII': 'CAPÍTULO SETE',
+            'CAPÍTULO VIII': 'CAPÍTULO OITO',
+            'CAPÍTULO IX': 'CAPÍTULO NOVE',
+            'CAPÍTULO X': 'CAPÍTULO DEZ',
+        }
+        for original, novo in substituicoes.items():
+            texto = texto.replace(original, novo)
+        return texto
+
+    def pontuar_finais_de_paragrafo(texto):
+        paragrafos = texto.split('\n\n')
+        paragrafos_corrigidos = []
+        for p in paragrafos:
+            p = p.strip()
+            if p and not re.search(r'[.!?…]$', p):
+                p += '.'
+            paragrafos_corrigidos.append(p)
+        return '\n\n'.join(paragrafos_corrigidos)
+
+    texto = remover_num_paginas_rodapes(texto)
+    texto = corrigir_hifenizacao(texto)
+    texto = remover_infos_bibliograficas_rodape(texto)
+    texto = converter_capitulos_para_extenso_simples(texto)
+    texto = pontuar_finais_de_paragrafo(texto)
     return texto
+
 
 def verificar_e_corrigir_arquivo(caminho_txt: str) -> str:
     """
@@ -1180,6 +1263,16 @@ async def selecionar_arquivo() -> str:
                     await asyncio.sleep(1)
                     continue
                 # Após converter, verifica se o TXT já foi corrigido
+                try:
+                    with open(caminho_txt, 'r', encoding='utf-8') as f:
+                        texto_original = f.read()
+                    texto_formatado = aplicar_formatacao(texto_original)
+                    caminho_txt = os.path.splitext(caminho_txt)[0] + '_formatado.txt'
+                    with open(caminho_txt, 'w', encoding='utf-8') as f:
+                        f.write(texto_formatado)
+                    print(f'✅ Formatação aplicada e salva em: {caminho_txt}')
+                except Exception as e:
+                    print(f'❌ Erro ao aplicar formatação: {e}')
                 caminho_txt = verificar_e_corrigir_arquivo(caminho_txt)
                 editar = (await aioconsole.ainput("\nDeseja editar o arquivo TXT corrigido? (s/n): ")).strip().lower()
                 if editar == 's':
@@ -1201,6 +1294,17 @@ async def selecionar_arquivo() -> str:
                 # Se o arquivo TXT não contém o sufixo _formatado, corrige-o automaticamente
                 if not os.path.basename(caminho).lower().endswith("_formatado.txt"):
                     caminho = verificar_e_corrigir_arquivo(caminho)
+                    try:
+                        with open(caminho, 'r', encoding='utf-8') as f:
+                            texto_original = f.read()
+                        texto_formatado = aplicar_formatacao(texto_original)
+                        caminho_formatado = os.path.splitext(caminho)[0] + '_formatado.txt'
+                        with open(caminho_formatado, 'w', encoding='utf-8') as f:
+                            f.write(texto_formatado)
+                        print(f'✅ Formatação aplicada ao TXT e salva em: {caminho_formatado}')
+                        caminho = caminho_formatado
+                    except Exception as e:
+                        print(f'❌ Erro ao aplicar formatação ao TXT: {e}')
                 return caminho
             else:
                 print(f"\n❌ Formato não suportado: {ext}")
