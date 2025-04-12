@@ -990,6 +990,8 @@ async def menu_melhorar_audio():
             print("\n❌ Opção inválida")
             await asyncio.sleep(1)
 
+from pathlib import Path
+
 async def processar_melhorar_audio(arquivo):
     """Processa a melhoria de um arquivo de áudio/vídeo."""
     global CANCELAR_PROCESSAMENTO
@@ -1022,7 +1024,13 @@ async def processar_melhorar_audio(arquivo):
             else:
                 print("Formato inválido. Digite 'mp3' ou 'mp4'.")
 
+        # Normaliza nome de saída
         nome_saida_base = f"{nome_base}_x{velocidade}".replace(".", "_")
+        nome_saida_base = re.sub(r'_+', '_', nome_saida_base)  # Remove underlines duplos
+
+        # Cria diretório de saída, se necessário
+        Path(os.path.dirname(nome_saida_base)).mkdir(parents=True, exist_ok=True)
+
         temp_audio = f"{nome_saida_base}_temp_audio.mp3"
 
         print(f"\n[+] Processando: {arquivo}")
