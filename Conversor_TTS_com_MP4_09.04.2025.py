@@ -785,6 +785,52 @@ def formatar_paragrafos_corrigir(texto):
     paragrafos = [p.strip() for p in texto.split('\n\n') if p.strip()]
     return '\n\n'.join(paragrafos)
 
+def expandir_abreviacoes(texto):
+    abreviacoes = {
+    r'\bDr\.(?=\s)': 'Doutor',
+    r'\bD\.(?=\s)': 'Dona',
+    r'\bDra\.(?=\s)': 'Doutora',
+    r'\bSr\.(?=\s)': 'Senhor',
+    r'\bSra\.(?=\s)': 'Senhora',
+    r'\bSrta\.(?=\s)': 'Senhorita',
+    r'\bProf\.(?=\s)': 'Professor',
+    r'\bProfa\.(?=\s)': 'Professora',
+    r'\bEng\.(?=\s)': 'Engenheiro',
+    r'\bEngª\.(?=\s)': 'Engenheira',
+    r'\bAdm\.(?=\s)': 'Administrador',
+    r'\bAdv\.(?=\s)': 'Advogado',
+    r'\bExmo\.(?=\s)': 'Excelentíssimo',
+    r'\bExma\.(?=\s)': 'Excelentíssima',
+    r'\bV\.Exa\.(?=\s)': 'Vossa Excelência',
+    r'\bV\.Sa\.(?=\s)': 'Vossa Senhoria',
+    r'\bAv\.(?=\s)': 'Avenida',
+    r'\bR\.(?=\s)': 'Rua',
+    r'\bKm\.(?=\s)': 'Quilômetro',
+    r'\betc\.(?=\s)': 'etcétera',
+    r'\bRef\.(?=\s)': 'Referência',
+    r'\bPag\.(?=\s)': 'Página',
+    r'\bPág\.(?=\s)': 'Página',
+    r'\bPágs\.(?=\s)': 'Páginas',
+    r'\bPags\.(?=\s)': 'Páginas',
+    r'\bFl\.(?=\s)': 'Folha',
+    r'\bPe\.(?=\s)': 'Padre',
+    r'\bFls\.(?=\s)': 'Folhas',
+    r'\bDept\.(?=\s)': 'Departamento',
+    r'\bDepto\.(?=\s)': 'Departamento',
+    r'\bUniv\.(?=\s)': 'Universidade',
+    r'\bInst\.(?=\s)': 'Instituição',
+    r'\bEst\.(?=\s)': 'Estado',
+    r'\bTel\.(?=\s)': 'Telefone',
+    r'\bCEP\.(?=\s)': 'Código de Endereçamento Postal',
+    r'\bCNPJ\.(?=\s)': 'Cadastro Nacional da Pessoa Jurídica',
+    r'\bCPF\.(?=\s)': 'Cadastro de Pessoas Físicas',
+    r'\bEUA\.(?=\s)': 'Estados Unidos da América',
+    r'\bEd\.(?=\s)': 'Edição',
+    r'\bLtda\.(?=\s)': 'Limitada'
+}
+    for abrev, extensao in abreviacoes.items():
+        texto = re.sub(abrev, extensao, texto)
+    return texto
 
 def melhorar_texto_corrigido(texto):
     texto = texto.replace('\f', '\n\n')  # Remove form feeds
@@ -831,6 +877,7 @@ def melhorar_texto_corrigido(texto):
     texto = remover_infos_bibliograficas_rodape(texto)
     texto = converter_capitulos_para_extenso_simples(texto)
     texto = pontuar_finais_de_paragrafo(texto)
+    texto = expandir_abreviacoes(texto)
     return texto
 
 
@@ -1112,38 +1159,47 @@ def processar_texto(texto: str) -> str:
 
     texto = re.sub(r'\s+', ' ', texto)
     abreviacoes = {
-        r'\bDr\.\b': 'Doutor',
-        r'\bDra\.\b': 'Doutora',
-        r'\bSr\.\b': 'Senhor',
-        r'\bSra\.\b': 'Senhora',
-        r'\bSrta\.\b': 'Senhorita',
-        r'\bProf\.\b': 'Professor',
-        r'\bProfa\.\b': 'Professora',
-        r'\bEng\.\b': 'Engenheiro',
-        r'\bEngª\.\b': 'Engenheira',
-        r'\bAdm\.\b': 'Administrador',
-        r'\bAdv\.\b': 'Advogado',
-        r'\bExmo\.\b': 'Excelentíssimo',
-        r'\bExma\.\b': 'Excelentíssima',
-        r'\bV\.Exa\.\b': 'Vossa Excelência',
-        r'\bV\.Sa\.\b': 'Vossa Senhoria',
-        r'\bAv\.\b': 'Avenida',
-        r'\bR\.\b': 'Rua',
-        r'\bKm\.\b': 'Quilômetro',
-        r'\betc\.\b': 'etcétera',
-        r'\bRef\.\b': 'Referência',
-        r'\bPag\.\b': 'Página',
-        r'\bDept\.\b': 'Departamento',
-        r'\bDepto\.\b': 'Departamento',
-        r'\bUniv\.\b': 'Universidade',
-        r'\bInst\.\b': 'Instituição',
-        r'\bEst\.\b': 'Estado',
-        r'\bTel\.\b': 'Telefone',
-        r'\bCEP\.\b': 'Código de Endereçamento Postal',
-        r'\bCNPJ\.\b': 'Cadastro Nacional da Pessoa Jurídica',
-        r'\bCPF\.\b': 'Cadastro de Pessoas Físicas',
-        r'\bLtda\.\b': 'Limitada'
-    }
+    r'\bDr\.(?=\s)': 'Doutor',
+    r'\bD\.(?=\s)': 'Dona',
+    r'\bDra\.(?=\s)': 'Doutora',
+    r'\bSr\.(?=\s)': 'Senhor',
+    r'\bSra\.(?=\s)': 'Senhora',
+    r'\bSrta\.(?=\s)': 'Senhorita',
+    r'\bProf\.(?=\s)': 'Professor',
+    r'\bProfa\.(?=\s)': 'Professora',
+    r'\bEng\.(?=\s)': 'Engenheiro',
+    r'\bEngª\.(?=\s)': 'Engenheira',
+    r'\bAdm\.(?=\s)': 'Administrador',
+    r'\bAdv\.(?=\s)': 'Advogado',
+    r'\bExmo\.(?=\s)': 'Excelentíssimo',
+    r'\bExma\.(?=\s)': 'Excelentíssima',
+    r'\bV\.Exa\.(?=\s)': 'Vossa Excelência',
+    r'\bV\.Sa\.(?=\s)': 'Vossa Senhoria',
+    r'\bAv\.(?=\s)': 'Avenida',
+    r'\bR\.(?=\s)': 'Rua',
+    r'\bKm\.(?=\s)': 'Quilômetro',
+    r'\betc\.(?=\s)': 'etcétera',
+    r'\bRef\.(?=\s)': 'Referência',
+    r'\bPag\.(?=\s)': 'Página',
+    r'\bPág\.(?=\s)': 'Página',
+    r'\bPágs\.(?=\s)': 'Páginas',
+    r'\bPags\.(?=\s)': 'Páginas',
+    r'\bFl\.(?=\s)': 'Folha',
+    r'\bPe\.(?=\s)': 'Padre',
+    r'\bFls\.(?=\s)': 'Folhas',
+    r'\bDept\.(?=\s)': 'Departamento',
+    r'\bDepto\.(?=\s)': 'Departamento',
+    r'\bUniv\.(?=\s)': 'Universidade',
+    r'\bInst\.(?=\s)': 'Instituição',
+    r'\bEst\.(?=\s)': 'Estado',
+    r'\bTel\.(?=\s)': 'Telefone',
+    r'\bCEP\.(?=\s)': 'Código de Endereçamento Postal',
+    r'\bCNPJ\.(?=\s)': 'Cadastro Nacional da Pessoa Jurídica',
+    r'\bCPF\.(?=\s)': 'Cadastro de Pessoas Físicas',
+    r'\bEUA\.(?=\s)': 'Estados Unidos da América',
+    r'\bEd\.(?=\s)': 'Edição',
+    r'\bLtda\.(?=\s)': 'Limitada'
+}
 
     for abrev, expansao in abreviacoes.items():
         texto = re.sub(abrev, expansao, texto)
