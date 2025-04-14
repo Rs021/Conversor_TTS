@@ -13,7 +13,7 @@ VOZES_PT_BR = [
 
 ENCODINGS_TENTATIVAS = ['utf-8', 'utf-16', 'iso-8859-1', 'cp1252']
 BUFFER_IO = 32768
-MAX_TENTATIVAS = 3  # Número máximo de tentativas por chunk
+MAX_TENTATIVAS = 1 # Número máximo de tentativas por chunk
 CANCELAR_PROCESSAMENTO = False
 FFMPEG_BIN = "ffmpeg"
 FFPROBE_BIN = "ffprobe"

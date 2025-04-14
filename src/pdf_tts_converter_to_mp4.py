@@ -13,19 +13,14 @@ from math import ceil
 from tqdm import tqdm
 from num2words import num2words
 from configs import *
-
 from pdfParser import pdfCoverter
 
 # Just for test
 
-txt_path = "assets/teste.txt"
 
 sistema = {"linux": True}
 
 
-def limpar_tela() -> None:
-    """Limpa a tela do terminal de forma compatível com todos os sistemas."""
-    os.system("clear")
 
 
 async def obter_opcao(prompt: str, opcoes: list) -> str:
@@ -97,7 +92,7 @@ def unificar_audio(temp_files, arquivo_final) -> bool:
 
 async def exibir_banner() -> None:
     """Exibe o banner do programa."""
-    limpar_tela()
+    
     print(
         """
 ╔════════════════════════════════════════════╗
@@ -162,22 +157,7 @@ async def exibir_ajuda() -> None:
     await aioconsole.ainput("\nPressione ENTER para voltar ao menu principal...")
 
 
-async def testar_voz(voz: str) -> None:
-    """
-    Testa uma voz específica com um texto de exemplo e salva a amostra
-    em uma pasta na pasta Download do Android. Após a geração, retorna automaticamente.
-    """
-    texto_teste = "Apenas um teste simples"
-    communicate = edge_tts.Communicate(texto_teste, voz)
 
-    file_path = "teste_voz.mp3"
-
-    try:
-        await communicate.save(file_path)
-        print(f"\n✅ Arquivo de teste gerado: {file_path}")
-        await asyncio.sleep(1)
-    except Exception as e:
-        print(f"\n❌ Erro ao testar voz: {str(e)}")
 
 
 def listar_arquivos(diretorio: str, extensoes: list = None) -> list:
@@ -809,7 +789,7 @@ async def converter_texto_para_audio(texto: str, voz: str, caminho_saida: str) -
             await communicate.save(caminho_saida)
 
             # Verifica se o arquivo foi criado e tem tamanho mínimo
-            if os.path.exists(caminho_saida) and os.path.getsize(caminho_saida) > 1024:
+            if os.path.exists(caminho_saida) and os.path.getsize(caminho_saida) > 0:
                 return True
             else:
                 print("⚠️ Arquivo de áudio vazio ou muito pequeno")
@@ -818,13 +798,10 @@ async def converter_texto_para_audio(texto: str, voz: str, caminho_saida: str) -
                 return False
         except Exception as e:
             tentativas += 1
-            print(
+            raise Exception(
                 f"\n❌ Erro na conversão (tentativa {tentativas}/{MAX_TENTATIVAS}): {str(e)}"
             )
-            if os.path.exists(caminho_saida):
-                os.remove(caminho_saida)
-            if tentativas < MAX_TENTATIVAS:
-                await asyncio.sleep(2)  # Espera antes de tentar novamente
+            
     return False
 
 
@@ -841,6 +818,7 @@ async def selecionar_arquivo() -> str:
     dir_atual = os.path.join(
         os.path.expanduser("~"), "/workspaces/Conversor_TTS/assets"
     )
+    
     while True:
         await exibir_banner()
         print("\n📂 SELEÇÃO DE ARQUIVO")

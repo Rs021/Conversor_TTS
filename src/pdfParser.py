@@ -48,6 +48,6 @@ class pdfCoverter:
             stderr=subprocess.PIPE,
         )
         if resultado.returncode != 0:
-            print(f"❌ Erro ao converter o PDF: {resultado.stderr.decode()}")
+            raise Exception(f"❌ Erro ao converter o PDF: {resultado.stderr.decode()}")
             return False
         return True

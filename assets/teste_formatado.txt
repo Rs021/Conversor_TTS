@@ -1,3 +1,0 @@
-ARQUIVO PDF DE TESTE
-Este é um arquivo pdf utilizado para testes de consulta de arquivo.
-
