@@ -10,10 +10,14 @@ from menu import Menu
 from files_utils import filesUtils
 import edge_tts
 import shutil
+
+
 class Audio:
 
     @staticmethod
-    async def converter_texto_para_audio(texto: str, voz: str, caminho_saida: str) -> bool:
+    async def converter_texto_para_audio(
+        texto: str, voz: str, caminho_saida: str
+    ) -> bool:
         """Converte texto para áudio usando Edge TTS."""
         tentativas = 0
         while tentativas < MAX_TENTATIVAS:
@@ -26,7 +30,10 @@ class Audio:
                 await communicate.save(caminho_saida)
 
                 # Verifica se o arquivo foi criado e tem tamanho mínimo
-                if os.path.exists(caminho_saida) and os.path.getsize(caminho_saida) > 1024:
+                if (
+                    os.path.exists(caminho_saida)
+                    and os.path.getsize(caminho_saida) > 1024
+                ):
                     return True
                 else:
                     print("⚠️ Arquivo de áudio vazio ou muito pequeno")
@@ -39,9 +46,8 @@ class Audio:
                 raise Exception(
                     f"\n❌ Erro na conversão (tentativa {tentativas}/{MAX_TENTATIVAS}): {str(e)}"
                 )
-                
-        return False
 
+        return False
 
     @staticmethod
     def obter_duracao_ffprobe(caminho_arquivo):
@@ -140,7 +146,9 @@ class Audio:
         while True:
             print(f"\nDiretório atual: {dir_atual}")
             print("\nArquivos de áudio/vídeo disponíveis:")
-            arquivos = filesUtils.listar_arquivos(dir_atual, [".mp3", ".wav", ".m4a", ".mp4"])
+            arquivos = filesUtils.listar_arquivos(
+                dir_atual, [".mp3", ".wav", ".m4a", ".mp4"]
+            )
 
             if not arquivos:
                 print("\n⚠️ Nenhum arquivo de áudio/vídeo encontrado neste diretório")
@@ -194,8 +202,6 @@ class Audio:
             else:
                 print("\n❌ Opção inválida")
                 await asyncio.sleep(1)
-
-
 
     @staticmethod
     async def processar_melhorar_audio(arquivo):
@@ -279,7 +285,11 @@ class Audio:
                     video_completo = f"{nome_saida_base}_video.mp4"
                     Audio.criar_video_com_audio(temp_audio, video_completo, duracao)
                     Audio.dividir_em_partes(
-                        video_completo, duracao, LIMITE_SEGUNDOS, nome_saida_base, ".mp4"
+                        video_completo,
+                        duracao,
+                        LIMITE_SEGUNDOS,
+                        nome_saida_base,
+                        ".mp4",
                     )
                     os.remove(video_completo)
                 else:
@@ -299,36 +309,38 @@ class Audio:
 
     @staticmethod
     def unificar_audio(temp_files, arquivo_final) -> bool:
-            """Une os arquivos de áudio temporários em um único arquivo final."""
-            try:
-                if shutil.which(FFMPEG_BIN):
-                    list_file = os.path.join(os.path.dirname(arquivo_final), "file_list.txt")
-                    with open(list_file, "w") as f:
-                        for temp in temp_files:
-                            f.write(f"file '{os.path.abspath(temp)}'\n")
-                    subprocess.run(
-                        [
-                            FFMPEG_BIN,
-                            "-f",
-                            "concat",
-                            "-safe",
-                            "0",
-                            "-i",
-                            list_file,
-                            "-c",
-                            "copy",
-                            arquivo_final,
-                        ],
-                        check=True,
-                    )
-                    os.remove(list_file)
-                else:
-                    # Fallback: concatenação binária (pode não funcionar perfeitamente para mp3)
-                    with open(arquivo_final, "wb") as outfile:
-                        for temp in temp_files:
-                            with open(temp, "rb") as infile:
-                                outfile.write(infile.read())
-                return True
-            except Exception as e:
-                print(f"❌ Erro na unificação dos arquivos: {e}")
-                return False
+        """Une os arquivos de áudio temporários em um único arquivo final."""
+        try:
+            if shutil.which(FFMPEG_BIN):
+                list_file = os.path.join(
+                    os.path.dirname(arquivo_final), "file_list.txt"
+                )
+                with open(list_file, "w") as f:
+                    for temp in temp_files:
+                        f.write(f"file '{os.path.abspath(temp)}'\n")
+                subprocess.run(
+                    [
+                        FFMPEG_BIN,
+                        "-f",
+                        "concat",
+                        "-safe",
+                        "0",
+                        "-i",
+                        list_file,
+                        "-c",
+                        "copy",
+                        arquivo_final,
+                    ],
+                    check=True,
+                )
+                os.remove(list_file)
+            else:
+                # Fallback: concatenação binária (pode não funcionar perfeitamente para mp3)
+                with open(arquivo_final, "wb") as outfile:
+                    for temp in temp_files:
+                        with open(temp, "rb") as infile:
+                            outfile.write(infile.read())
+            return True
+        except Exception as e:
+            print(f"❌ Erro na unificação dos arquivos: {e}")
+            return False

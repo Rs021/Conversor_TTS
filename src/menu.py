@@ -1,11 +1,13 @@
 import aioconsole
 from configs import *
+
+
 class Menu:
 
     @staticmethod
     async def exibir_banner() -> None:
         """Exibe o banner do programa."""
-        
+
         print(
             """
     ╔════════════════════════════════════════════╗
@@ -14,7 +16,6 @@ class Menu:
     ╚════════════════════════════════════════════╝
     """
         )
-
 
     @staticmethod
     async def menu_principal() -> str:
@@ -28,7 +29,6 @@ class Menu:
         print("5. 🔄 ATUALIZAR")
         print("6. 🚪 SAIR")
         return await Menu.obter_opcao("\nOpção: ", ["1", "2", "3", "4", "5", "6"])
-    
 
     @staticmethod
     async def obter_opcao(prompt: str, opcoes: list) -> str:
@@ -40,7 +40,6 @@ class Menu:
             print("⚠️ Opção inválida! Tente novamente.")
 
     @staticmethod
-
     async def menu_vozes() -> str:
         """Exibe o menu de seleção de vozes e retorna a voz escolhida."""
         await Menu.exibir_banner()

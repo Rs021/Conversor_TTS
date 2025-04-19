@@ -3,6 +3,7 @@ from textParser import ParserTxt
 import re
 from pdfParser import pdfCoverter
 
+
 class filesUtils:
 
     @staticmethod
@@ -78,4 +79,3 @@ class filesUtils:
         except Exception as e:
             print(f"\n❌ Erro ao ler arquivo: {str(e)}")
             return ""
-

@@ -10,8 +10,6 @@ from configs import *
 from formatText import textFormat
 from menu import Menu
 
-
-
 class pdfCoverter:
 
     @staticmethod
@@ -25,6 +23,7 @@ class pdfCoverter:
 
             with open(path_pdf, "rb") as _:
                 pass
+
         except PermissionError:
             raise Exception(f"❌ Sem permissão para acessar o arquivo: {path_pdf}")
 
@@ -59,9 +58,8 @@ class pdfCoverter:
         )
         if resultado.returncode != 0:
             raise Exception(f"❌ Erro ao converter o PDF: {resultado.stderr.decode()}")
-            return False
+        
         return True
-    
 
     @staticmethod
     def detectar_encoding(caminho_arquivo: str) -> str:
@@ -84,9 +82,10 @@ class pdfCoverter:
             print(f"\n⚠️ Erro ao detectar encoding: {str(e)}")
             return "utf-8"
 
-
     @staticmethod
     async def selecionar_arquivo() -> str:
+
+        from files_utils import filesUtils
         """
         Interface aprimorada para seleção de arquivo com navegação por diretórios.
         Se o usuário selecionar um PDF, ele é convertido para TXT e o arquivo gerado é corrigido.
@@ -96,7 +95,7 @@ class pdfCoverter:
         dir_atual = os.path.join(
             os.path.expanduser("~"), "/workspaces/Conversor_TTS/assets"
         )
-        
+
         while True:
             await Menu.exibir_banner()
             print("\n📂 SELEÇÃO DE ARQUIVO")
@@ -113,7 +112,9 @@ class pdfCoverter:
             print("M. Digitar caminho manualmente")
             print("V. Voltar ao menu principal")
             try:
-                escolha = (await aioconsole.ainput("\nEscolha uma opção: ")).strip().upper()
+                escolha = (
+                    (await aioconsole.ainput("\nEscolha uma opção: ")).strip().upper()
+                )
             except asyncio.TimeoutError:
                 return ""
 
@@ -148,13 +149,15 @@ class pdfCoverter:
                         with open(caminho_txt, "r", encoding="utf-8") as f:
                             texto_original = f.read()
                         texto_formatado = textFormat.apply_format(texto_original)
-                        caminho_txt = os.path.splitext(caminho_txt)[0] + "_formatado.txt"
+                        caminho_txt = (
+                            os.path.splitext(caminho_txt)[0] + "_formatado.txt"
+                        )
                         with open(caminho_txt, "w", encoding="utf-8") as f:
                             f.write(texto_formatado)
                         print(f"✅ Formatação aplicada e salva em: {caminho_txt}")
                     except Exception as e:
                         print(f"❌ Erro ao aplicar formatação: {e}")
-                    caminho_txt = textFormat.verificar_e_corrigir_arquivo(caminho_txt)
+                    caminho_txt = filesUtils.verificar_e_corrigir_arquivo(caminho_txt)
                     editar = (
                         (
                             await aioconsole.ainput(
@@ -190,7 +193,7 @@ class pdfCoverter:
                 elif ext == ".txt":
                     # Se o arquivo TXT não contém o sufixo _formatado, corrige-o automaticamente
                     if not os.path.basename(caminho).lower().endswith("_formatado.txt"):
-                        caminho = textFormat.verificar_e_corrigir_arquivo(caminho)
+                        caminho = filesUtils.verificar_e_corrigir_arquivo(caminho)
                         try:
                             with open(caminho, "r", encoding="utf-8") as f:
                                 texto_original = f.read()
@@ -224,7 +227,9 @@ class pdfCoverter:
                             await asyncio.sleep(1)
                             continue
                         # Corrige o TXT gerado, se necessário
-                        caminho_txt = textFormat.verificar_e_corrigir_arquivo(caminho_txt)
+                        caminho_txt = filesUtils.verificar_e_corrigir_arquivo(
+                            caminho_txt
+                        )
                         editar = (
                             (
                                 await aioconsole.ainput(
@@ -263,7 +268,7 @@ class pdfCoverter:
                             .lower()
                             .endswith("_formatado.txt")
                         ):
-                            caminho_completo = textFormat.verificar_e_corrigir_arquivo(
+                            caminho_completo = filesUtils.verificar_e_corrigir_arquivo(
                                 caminho_completo
                             )
                         return caminho_completo

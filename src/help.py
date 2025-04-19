@@ -4,7 +4,7 @@ import asyncio
 class Help:
     async def exibir_ajuda() -> None:
         """Exibe o guia de ajuda do programa."""
-        
+
         print(
             """
     📖 GUIA DE USO:
@@ -27,6 +27,3 @@ class Help:
     """
         )
         await aioconsole.ainput("\nPressione ENTER para voltar ao menu principal...")
-
-
-
