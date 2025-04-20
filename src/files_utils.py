@@ -18,6 +18,7 @@ class filesUtils:
                         arquivos.append(item)
         except Exception as e:
             print(f"\n⚠️ Erro ao listar arquivos: {str(e)}")
+            
         return sorted(arquivos)
 
     @staticmethod

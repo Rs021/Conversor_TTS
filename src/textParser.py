@@ -2,6 +2,7 @@ import re
 import unicodedata
 from configs import *
 
+
 class ParserTxt:
 
     def normalizar_texto_corrigir(texto):
@@ -179,7 +180,6 @@ class ParserTxt:
         texto = ParserTxt.expandir_abreviacoes(texto)
         return texto
 
-
     @staticmethod
     async def iniciar_conversao() -> None:
 
@@ -193,7 +193,7 @@ class ParserTxt:
         from files_utils import filesUtils
         from audio import Audio
         from pdfParser import pdfCoverter
-        
+
         """
         Inicia o processo de conversão de texto para áudio de forma concorrente.
         O tamanho dos chunks é calculado dinamicamente.
@@ -223,7 +223,9 @@ class ParserTxt:
             partes = textFormat.dividir_texto(texto_processado)
             total_partes = len(partes)
             print(f"\n📊 Texto dividido em {total_partes} parte(s).")
-            print("Para interromper a conversão a qualquer momento, pressione CTRL + C.\n")
+            print(
+                "Para interromper a conversão a qualquer momento, pressione CTRL + C.\n"
+            )
 
             nome_base = os.path.splitext(os.path.basename(caminho_arquivo))[0]
             nome_base = filesUtils.limpar_nome_arquivo(nome_base)

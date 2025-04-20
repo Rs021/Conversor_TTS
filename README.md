@@ -1,12 +1,12 @@
-# Conversor TTS – Texto para Fala em Português Brasileiro (PT-BR)
+# Conversor TTS (Text-to-Speech) – Texto para Fala em Português Brasileiro (PT-BR)
 
-Um script simples e eficiente para converter textos em arquivos de áudio (MP3), utilizando a tecnologia **Edge TTS** da Microsoft. Compatível com **Windows**, **Linux** e **Android (via Termux)**, este projeto foi desenvolvido para facilitar a conversão de textos longos em áudio de alta qualidade.
+Um script simples e eficiente para converter textos em arquivos de áudio (MP3), utilizando a tecnologia **Edge TTS** da Microsoft. Compatível com  **Linux**, este projeto foi desenvolvido para facilitar a conversão de textos longos em áudio de alta qualidade.
 
 ---
 
 ## ✨ Funcionalidades
 
-- ✅ **Compatível com Windows, Linux e Termux (Android)**
+- ✅ **Compatível Linux**
 
 - 🎙️ **Três vozes diferentes em português brasileiro**
 
@@ -22,13 +22,13 @@ Um script simples e eficiente para converter textos em arquivos de áudio (MP3),
 
 - ⏸️ **Pausa e retomada automática em caso de interrupção**
 
-- 💾 **Salvamento automático na pasta Download**
+- 
 
 ---
 
 ## 🗂️ Suporte a Arquivos PDF
 
-#### 🚨 ATENÇÃO: CASO NA PRIMEIRA VEZ QUE TENTAR CONVERTER UM PDF PARA TXT DÊ UMA MENSAGEM DE ERRO, BASTA AGUARDAR O SCRIPT INSTALAR AUTOMATICAMENTE AS DEPENDÊNCIAS DESSA FUNÇÃO E, APÓS ISSO, SELECIONAR NOVAMENTE O ARQUIVO PDF A SER CONVERTIDO, QUE IRÁ FUNCIONAR! 😉
+
 
 - **O script é capaz de detectar automaticamente se o arquivo selecionado é um PDF. Quando isso acontece, ele converte o conteúdo do PDF para .txt automaticamente, permitindo que o conteúdo seja lido pelo mecanismo TTS sem necessidade de ferramentas externas.**
 
@@ -40,106 +40,6 @@ Um script simples e eficiente para converter textos em arquivos de áudio (MP3),
 
 # ⚙️ Passo a Passo de Instalação e Uso
 
-## 🪟 Windows
-
-### 1️⃣ Instalar Python
-
-Baixe e instale o Python (3.6 ou superior):  
-
-[Download Python](https://www.python.org/downloads/)
-
-### 2️⃣ Baixar o Script
-
-Baixe os arquivos do repositório:  
-
-[Baixar Scripts](https://raw.github.com/JonJonesBR/Conversor_TTS/refs/heads/main/Conversor_TTS.zip)
-
-Após isso, extraia os arquivos baixados em uma pasta de sua escolha e execute o terminal do windows nela com os seguintes possíveis passos:
-
-Para **abrir o Terminal do Windows** (Windows Terminal ou Prompt de Comando) diretamente em uma pasta usando o **botão direito do mouse** ou um **atalho de teclado**, siga estas opções:
-
----
-
-### **1. Adicionar "Abrir Terminal aqui" ao menu de contexto (botão direito)**
-#### **Método 1: Usando o Windows Terminal (Recomendado)**
-Se você tem o **Windows Terminal** instalado (padrão no Windows 11), ele já inclui a opção nativamente:
-1. **Clique com o botão direito** em uma pasta ou no espaço vazio dentro dela.
-2. Selecione **"Abrir no Terminal"** (ou **"Open in Terminal"** em inglês).
-
-Se não aparecer, ative manualmente:
-1. Abra o **Windows Terminal** como administrador.
-2. Clique no **⬇ (menu suspenso)** > **Configurações**.
-3. Vá em **"Configurações do Windows Terminal"** > **"Abrir o menu de contexto"**.
-4. Ative **"Mostrar a entrada 'Abrir no Terminal' no menu de contexto de arquivos"**.
-
-#### **Método 2: Adicionar manualmente via Registro (funciona para CMD/PowerShell)**
-1. Pressione **`Win + R`**, digite **`regedit`** e pressione **Enter**.
-2. Navegue até:
-   ```
-   HKEY_CLASSES_ROOT\Directory\Background\shell
-   ```
-3. **Clique direito** em **`shell`** > **Novo** > **Chave** e nomeie como **`Open Terminal Here`**.
-4. Clique com o direito na nova chave, **Novo** > **Chave** e nomeie como **`command`**.
-5. No lado direito, clique duas vezes em **`(Padrão)`** e insira um dos comandos abaixo:
-   - **Windows Terminal**:
-     ```
-     wt -d "%V"
-     ```
-   - **PowerShell**:
-     ```
-     powershell.exe -NoExit -Command "Set-Location '%V'"
-     ```
-   - **CMD**:
-     ```
-     cmd.exe /k "cd /d "%V""
-     ```
-6. Reinicie o Explorer (via Gerenciador de Tarefas) ou o computador.
-
----
-
-### **2. Atalho de teclado para abrir o Terminal em uma pasta**
-1. Abra o **Explorador de Arquivos** e navegue até a pasta desejada.
-2. Pressione **`Alt + D`** para focar na barra de endereço.
-3. Digite **`wt`** (para Windows Terminal), **`powershell`** ou **`cmd`** e pressione **Enter**.
-   - Isso abrirá o terminal no diretório atual.
-
-#### **Atalho personalizado (se necessário)**:
-- Crie um atalho na área de trabalho com o comando:
-  ```cmd
-  cmd /k "cd /d C:\caminho\da\pasta"
-  ```
-- Defina um atalho de teclado nas **Propriedades** do atalho.
-
----
-
-### **Observações**:
-- No **Windows 11**, a opção de terminal já vem integrada.
-- Se usar **PowerShell 7+**, substitua `powershell.exe` por `pwsh.exe`.
-- Para **WSL (Linux)**, use `wsl` no lugar de `cmd`.
-
-Pronto! Agora você pode acessar o terminal rapidamente a partir de qualquer pasta. 🚀
-
-### 3️⃣ Instalar Dependências
-
-Abra o **Prompt de Comando** (Windows + R → `cmd`) e digite:
-
-```bash
-pkg update -y && pkg upgrade -y
-pkg install -y python git ffmpeg poppler termux-api
-pip install edge-tts langdetect unidecode num2words chardet requests tqdm aioconsole
-termux-setup-storage
-pkg install unzip -y
-```
-
-### 4️⃣ Executar o Script
-
-Navegue até a pasta onde salvou os scripts (ex.: Downloads) e execute o que preferir:
-
-```bash
-cd Downloads
-
-python Conversor_TTS_com_MP4_09.04.2025.py
-```
 
 ## 🐧 Linux
 
@@ -166,58 +66,19 @@ unzip -j Conversor_TTS.zip -d ~/
 ### 4️⃣ Instalar Dependências
 
 ```bash
-pkg update -y && pkg upgrade -y
-pkg install -y python git ffmpeg poppler termux-api
-pip install edge-tts langdetect unidecode num2words chardet requests tqdm aioconsole
-termux-setup-storage
+sudo apt update -y && sudo apt upgrade -y
+sudo apt install -y python git ffmpeg 
+pip install edge-tts langdetect unidecode num2words chardet aioconsole PyMuPDF
 ```
 
 ### 5️⃣ Executar o Script
 
 ```bash
-python Conversor_TTS_com_MP4_09.04.2025.py
+python pdf_tts_converter_to_mp4.py
 ```
 
-## 📱 Android (Termux)
 
-### 1️⃣ Instalar Termux
 
-Baixe a versão atualizada:
-
- •	[Termux no F-Droid](https://f-droid.org/packages/com.termux/)
-
- •	[Termux no GitHub](https://github.com/termux/termux-app/releases)
-
-### 2️⃣ Preparar o Termux
-
-Após abrir o Termux, rode:
-
-```bash
-pkg update -y && pkg upgrade -y
-pkg install -y python git ffmpeg poppler termux-api
-pip install edge-tts langdetect unidecode num2words chardet requests tqdm aioconsole
-termux-setup-storage
-```
-
-- **Se for perguhtado alguma coisa, basta digitar y no terminal e Enter**
-
-### 3️⃣ Baixar o Script
-
-```bash
-curl -L -o Conversor_TTS.zip https://github.com/JonJonesBR/Conversor_TTS/archive/refs/heads/main.zip
-```
-
-### 4️⃣ Extrair o arquivo zipado para a pasta raiz do Termux
-
-```bash
-unzip -j Conversor_TTS.zip -d ~/
-```
-
-### 5️⃣ Executar o Script
-
-```bash
-python Conversor_TTS_com_MP4_09.04.2025.py
-```
 
 ## 📂 Como Funciona
 
@@ -266,20 +127,20 @@ Antonio	(voz clara e objetiva)
 ## ❓ Problemas Comuns e Soluções
 
 - **Módulo não encontrado: Falta de dependência - Refaça o comando `pip install`.**
-
-- **Arquivo não encontrado: Caminho errado ou permissão -	No Termux, execute: `termux-setup-storage`.**
-
 - **Áudio incompleto:	Interrupção durante conversão -	Rode novamente o script para continuar.**
+- **❌ Se seu PDF conter notaçôes Latex, a conversão poderá falhar**
 
 ## 🔗 Links Úteis
 
 - **Repositório Oficial	[Acessar](https://github.com/JonJonesBR/Conversor_TTS)**
 
-- **Python para Windows	[Baixar](https://www.python.org/downloads/)**
+- **Python	[Baixar](https://www.python.org/downloads/)**
 
-- **Termux (F-Droid)	[Baixar](https://f-droid.org/packages/com.termux/)**
+## 📝 TODO
 
-- **Termux (GitHub)	[Baixar](https://github.com/termux/termux-app/releases)**
+- **⌛ Suporte a Latex**
+- **⬜ GUI** 
+
 
 ## 📄 Licença
 

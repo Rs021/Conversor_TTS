@@ -9,12 +9,14 @@ import aioconsole
 from configs import *
 from formatText import textFormat
 from menu import Menu
+import fitz
 
 class pdfCoverter:
 
     @staticmethod
     def converter_pdf(path_pdf: str, path_txt: str) -> bool:
-        """Converte PDF para TXT utilizando o comando pdftotext."""
+        """Converte PDF para TXT utilizando o módulo fitz."""
+        
         try:
             path_pdf = os.path.abspath(path_pdf)
 
@@ -23,7 +25,7 @@ class pdfCoverter:
 
             with open(path_pdf, "rb") as _:
                 pass
-
+                
         except PermissionError:
             raise Exception(f"❌ Sem permissão para acessar o arquivo: {path_pdf}")
 
@@ -39,26 +41,19 @@ class pdfCoverter:
                 raise Exception(f"❌ Erro ao criar diretório de saída: {str(e)}")
 
         try:
-            subprocess.run(
-                ["pdftotext", "-v"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                check=True,
-            )
+            file = fitz.open(path_pdf)
+            text = ""
+            for pages in file:
+                page = pages.get_text()
+                text += page
 
-        except FileNotFoundError:
-            raise Exception(
-                "❌ O pdftotext não está instalado no sistema. Instale com: sudo apt-get install poppler-utils"
-            )
+            with open(path_txt, 'w') as fl:
+                fl.write(text)
 
-        resultado = subprocess.run(
-            ["pdftotext", "-layout", path_pdf, path_txt],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        if resultado.returncode != 0:
-            raise Exception(f"❌ Erro ao converter o PDF: {resultado.stderr.decode()}")
-        
+
+        except Exception as e:
+            raise Exception(f"❌ Erro ao converter o PDF: {e}")
+
         return True
 
     @staticmethod
@@ -86,6 +81,7 @@ class pdfCoverter:
     async def selecionar_arquivo() -> str:
 
         from files_utils import filesUtils
+
         """
         Interface aprimorada para seleção de arquivo com navegação por diretórios.
         Se o usuário selecionar um PDF, ele é convertido para TXT e o arquivo gerado é corrigido.
@@ -116,10 +112,10 @@ class pdfCoverter:
                     (await aioconsole.ainput("\nEscolha uma opção: ")).strip().upper()
                 )
             except asyncio.TimeoutError:
-                return ""
+                raise TimeoutError("Parece que isso demorou demais!")
 
             if escolha == "V":
-                return ""
+                return "" 
             elif escolha == "D":
                 novo_dir = (
                     await aioconsole.ainput("\nDigite o caminho do novo diretório: ")
@@ -137,6 +133,7 @@ class pdfCoverter:
                     print(f"\n❌ Arquivo não encontrado: {caminho}")
                     await asyncio.sleep(1)
                     continue
+
                 ext = os.path.splitext(caminho)[1].lower()
                 if ext == ".pdf":
                     caminho_txt = os.path.splitext(caminho)[0] + ".txt"

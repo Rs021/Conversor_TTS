@@ -1,0 +1,52 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environments
+env/
+venv/
+.venv/
+
+# VS Code / PyCharm settings
+.vscode/
+.idea/
+
+# Jupyter Notebooks checkpoints
+.ipynb_checkpoints/
+
+# Logs
+*.log
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Python packaging
+*.egg-info/
+dist/
+build/
+
+# Test coverage
+.coverage
+htmlcov/
+
+# Pytest
+.cache/
+
+# dotenv
+.env
+
+# Ignore your local data/output folders (opcional)
+data/
+output/
+
+# Ignore model weights/checkpoints
+*.pt
+*.pth
+*.ckpt
+
+assets/
+tests/

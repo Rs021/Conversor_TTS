@@ -43,6 +43,7 @@ class Audio:
                     return False
             except Exception as e:
                 tentativas += 1
+                
                 raise Exception(
                     f"\n❌ Erro na conversão (tentativa {tentativas}/{MAX_TENTATIVAS}): {str(e)}"
                 )

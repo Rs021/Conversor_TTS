@@ -1,1 +1,0 @@
-Sabe quando você diz: 'só vou ajustar esse if rapidinho antes de sair'… e 3 horas depois você tá no Stack Overflow tentando entender o que é um 'Segmentation Fault'? Pois é… aconteceu de novo.

@@ -1,4 +1,3 @@
-
 import asyncio
 from configs import *
 from voiceTester import testVoice
@@ -7,7 +6,6 @@ from menu import Menu
 from audio import Audio
 import traceback
 from textParser import ParserTxt
-
 
 
 async def main() -> None:
@@ -32,6 +30,7 @@ async def main() -> None:
         elif opcao == "6":
             print("\n👋 Obrigado por usar o Conversor TTS Completo!")
             break
+
 
 1
 if __name__ == "__main__":
